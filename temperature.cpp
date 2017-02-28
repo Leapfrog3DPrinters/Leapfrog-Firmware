@@ -1171,6 +1171,16 @@ void bed_max_temp_error(void) {
   }
 }
 
+void bed_min_temp_error(void) {
+#if HEATER_BED_PIN > -1
+  WRITE(HEATER_BED_PIN, 0);
+#endif
+  if(IsStopped() == false) {
+    SERIAL_ERROR_START;
+    SERIAL_ERRORLNPGM("Temperature heated bed switched off. MINTEMP triggered !!");
+  }
+}
+
 #define HEAT_INTERVAL 250
 #ifdef HEATER_0_USES_MAX6675
 long max6675_previous_millis = -HEAT_INTERVAL;
@@ -1455,6 +1465,13 @@ ISR(TIMER0_COMPB_vect)
     if(current_raw_bed >= bed_maxttemp) {
        target_raw_bed = 0;
        bed_max_temp_error();
+       Stop();
+    }
+#endif
+#if defined(BED_MINTEMP) && (HEATER_BED_PIN > -1)
+    if(current_raw_bed <= bed_minttemp) {
+       target_raw_bed = 0;
+       bed_min_temp_error();
        Stop();
     }
 #endif

@@ -2,15 +2,43 @@
 
 Changes to Leapfrog-Firmware 
 
+## 2.7
+
+- Changed bed coordinates for X
+- Changed parking distance. 
+- Changed Z-homing speed 
+- Added min_bed_temp warning and check
+
+###Config changes
+| Name | Old | New
+|---|---|---
+HOMING_FEEDRATE | `100*60, 100*60, 20*60, 0` | `100*60, 100*60, 600, 0`
+DEFAULT_PARK_OFFSET | `10.0` | `1.0`
+
+| Buildvolume | Old | New 
+|---| --- | --- |
+| Xmin | `0.0` | **`-37.0`** 
+| Xmax | `367.0` | **`330.0`**
+| Ymin | `-33.0` | `-33.0` 
+| Ymax| `322.0` | `322.0` 
+| Zmin| `0.0` | `0.0` 
+| Zmax | `205.0`| `205.0`
+
+
 ## 2.6
 
 - Changed bed volume and homing position to make sure that actual buildvolume is ok
 - Fixed critical bug on software endstop declaration
 
-| Buildvolume | Xmin | Xmax | Ymin | Ymax | Zmin | Zmax 
-|---| --- | --- | --- | --- | --- | --- 
-| Old | `0.0` | `367.0` | `0.0` | `355.0` | `0.0` | `205.0` 
-| **New** | `0.0` | `367.0` | **`-33.0`** | **`322.0`** | `0.0` | `205.0`
+| Buildvolume | Old | New 
+|---| --- | --- |
+| Xmin | `0.0` | `0.0`
+| Xmax | `367.0` | `367.0`
+| Ymin | `0.0` | **`-33.0`** 
+| Ymax| `355.0` | **`322.0`** 
+| Zmin| `0.0` | `0.0` 
+| Zmax | `205.0`| `205.0`
+
 
 ## 2.5
 

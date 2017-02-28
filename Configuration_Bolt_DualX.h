@@ -81,10 +81,10 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define max_software_endstops true  //If true, axis won't move to coordinates greater than the defined lengths below.
 
 // Travel limits after homing
-#define X_MIN_POS 0.0
+#define X_MIN_POS -37.0
 #define Y_MIN_POS -33.0  //0 original
 #define Z_MIN_POS 0.0
-#define X_MAX_POS 367.0     // 360.2 original
+#define X_MAX_POS 330.0     // 360.2 original
 #define Y_MAX_POS 322.0     //350 original; 5 mm removed for safety
 #define Z_MAX_POS 205.0
 
@@ -93,7 +93,7 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define Y_HOME_POS Y_MAX_POS  //350 original
 #define Z_HOME_POS Z_MIN_POS
 
-#define DEFAULT_PARK_OFFSET 10.0
+#define DEFAULT_PARK_OFFSET 1.0
 
 #define X0_PARK_POS X_MAX_POS - DEFAULT_PARK_OFFSET
 #define X1_PARK_POS X_MIN_POS + DEFAULT_PARK_OFFSET

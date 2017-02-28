@@ -10,7 +10,7 @@
   //to THIS file by the user have been successfully uploaded into firmware.
   #define STRING_VERSION_CONFIG_H __DATE__ " " __TIME__ //Personal revision number for changes to THIS file.
   #define STRING_CONFIG_H_AUTHOR "Leapfrog 3D Printers" //Who made the changes.
-  #define LEAPFROG_FIRMWARE_VERSION "2.6"
+  #define LEAPFROG_FIRMWARE_VERSION "2.7"
   #define LEAPFROG_MODEL "Bolt"
 
   // This determines the communication speed of the printer
@@ -112,7 +112,7 @@
 
   //// MOVEMENT SETTINGS
   #define NUM_AXIS 4 // The axis order in all axis related arrays is X, Y, Z, E
-  #define HOMING_FEEDRATE {100*60, 100*60, 20*60, 0}  // set the homing speeds (mm/min)
+  #define HOMING_FEEDRATE {100*60, 100*60, 600, 0}  // set the homing speeds (mm/min)
   #define PARKING_FEEDRATE 300 * 60
 
   // default settings
