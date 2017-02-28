@@ -1,3 +1,17 @@
+# Changlog
+
+Changes to Leapfrog-Firmware 
+
+## 2.6
+
+- Changed bed volume and homing position to make sure that actual buildvolume is ok
+- Fixed critical bug on software endstop declaration
+
+| Buildvolume | Xmin | Xmax | Ymin | Ymax | Zmin | Zmax 
+|---| --- | --- | --- | --- | --- | --- 
+| Old | `0.0` | `367.0` | `0.0` | `355.0` | `0.0` | `205.0` 
+| **New** | `0.0` | `367.0` | **`-33.0`** | **`322.0`** | `0.0` | `205.0`
+
 ## 2.5
 
 - Fixed temperature reporting. 2.4 had an output error

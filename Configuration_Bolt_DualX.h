@@ -82,10 +82,10 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 
 // Travel limits after homing
 #define X_MIN_POS 0.0
-#define Y_MIN_POS 0.0  //0 original
+#define Y_MIN_POS -33.0  //0 original
 #define Z_MIN_POS 0.0
 #define X_MAX_POS 367.0     // 360.2 original
-#define Y_MAX_POS 355.0     //350 original; 5 mm removed for safety
+#define Y_MAX_POS 322.0     //350 original; 5 mm removed for safety
 #define Z_MAX_POS 205.0
 
 // The position of the homing switches. Use MAX_LENGTH * -0.5 if the center should be 0, 0, 0

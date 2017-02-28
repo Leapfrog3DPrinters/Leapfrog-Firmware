@@ -566,12 +566,12 @@ static void axis_is_at_home(int axis)
 	{
 		current_position[axis] = base_home_pos(axis) + add_homeing[axis];
 		min_pos[axis] = base_min_pos(axis) + add_homeing[axis];
-		max_pos[axis] = bed_width() + add_homeing[axis];
+		max_pos[axis] = base_max_pos(axis) + add_homeing[axis];
 	}
 #else
 	current_position[axis] = base_home_pos(axis) + add_homeing[axis];
 	min_pos[axis] = base_min_pos(axis) + add_homeing[axis];
-	max_pos[axis] = bed_width() + add_homeing[axis];
+	max_pos[axis] = base_max_pos(axis) + add_homeing[axis];
 #endif
 
 #if SAFE_MOVES
@@ -883,7 +883,12 @@ void process_commands()
 			//TODO: Remove this
 
 			// Dump status about X
-			dumpstatus();
+			//dumpstatus();
+			// DEBUG: max_software_enstops hit
+			SERIAL_PROTOCOLLN("max software endstops")
+			SERIAL_PROTOCOLLN(max_pos[X_AXIS])
+			SERIAL_PROTOCOLLN(max_pos[Y_AXIS])
+			SERIAL_PROTOCOLLN(max_pos[Z_AXIS])
 			break;
 		case 104: // M104
 			if (setTargetedHotend(104))
