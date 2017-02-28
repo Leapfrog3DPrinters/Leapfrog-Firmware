@@ -1739,24 +1739,20 @@ bool setTargetedHotend(int code) {
 
 void printTemperatures()
 {
-	SERIAL_PROTOCOLPGM("T:");
-	SERIAL_PROTOCOL_F(degHotend(active_extruder), 1);
-	SERIAL_PROTOCOLPGM(" /");
-	SERIAL_PROTOCOL_F(degTargetHotend(active_extruder), 1);
+	for (int8_t cur_extruder = 0; cur_extruder < EXTRUDERS; ++cur_extruder)
+	{
+		SERIAL_PROTOCOLPGM("T");
+		SERIAL_PROTOCOL(cur_extruder);
+		SERIAL_PROTOCOLPGM(":");
+		SERIAL_PROTOCOL_F(degHotend(cur_extruder), 1);
+		SERIAL_PROTOCOLPGM(" /");
+		SERIAL_PROTOCOL_F(degTargetHotend(cur_extruder), 1);
 #if TEMP_BED_PIN > -1
 	SERIAL_PROTOCOLPGM(" B:");
 	SERIAL_PROTOCOL_F(degBed(), 1);
 	SERIAL_PROTOCOLPGM(" /");
 	SERIAL_PROTOCOL_F(degTargetBed(), 1);
 #endif //TEMP_BED_PIN
-	for (int8_t cur_extruder = 0; cur_extruder < EXTRUDERS; ++cur_extruder)
-	{
-		SERIAL_PROTOCOLPGM(" T");
-		SERIAL_PROTOCOL(cur_extruder);
-		SERIAL_PROTOCOLPGM(":");
-		SERIAL_PROTOCOL_F(degHotend(cur_extruder), 1);
-		SERIAL_PROTOCOLPGM(" /");
-		SERIAL_PROTOCOL_F(degTargetHotend(cur_extruder), 1);
 	}
 #ifdef PIDTEMP
 	SERIAL_PROTOCOLPGM(" @:");
