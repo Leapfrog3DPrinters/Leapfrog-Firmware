@@ -9,7 +9,7 @@
 
 #define PROTOCOL_VERSION "1.0"
 
-#define MACHINE_NAME "Bolt"
+#define MACHINE_NAME "CreatrHS"
 #define FIRMWARE_URL "http://www.lpfrg.com"
 
 #define STRINGIFY_(n) #n
