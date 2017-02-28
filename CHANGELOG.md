@@ -1,3 +1,30 @@
+## 2.5
+
+- Fixed temperature reporting. 2.4 had an output error
+- Changed max feedrate of Z-axis due to steps max
+- Changed bed width calibration to negative output in M115
+
+###Config changes
+| Name | Old | New
+|---|---|---
+DEFAULT_MAX_FEEDRATE | `400, 400, 40, 200` | `400, 400, 20, 200`
+
+## 2.4
+
+- Changed temperature reporting
+Removed the active extruder temperature.
+OLD: `T: 20 / 0 B: 20 / 0 T0: 20 / 0 T1: 21 /0 @: 0`
+NEW: `T0: 20 / 0 T1: 21 /0 B: 20 / 0  @: 0`
+This is done because Mirror mode makes "active extruder" always be T1 that makes LUI act weird.
+
+###Config changes
+| Name | Old | New
+|---|---|---
+| DEFAULT_MAX_ACCELERATION | `450, 450, 100, 30` | `400,400,100,30`
+| DEFAULT_ACCELERATION | `1000` | `400`
+| DEFAULT_XYJERK | `25` | `20`
+
+
 ## Beta
 
 - Dual X Calibration M219

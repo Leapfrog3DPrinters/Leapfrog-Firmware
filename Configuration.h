@@ -9,8 +9,8 @@
   //Implementation of an idea by Prof Braino to inform user that any changes made
   //to THIS file by the user have been successfully uploaded into firmware.
   #define STRING_VERSION_CONFIG_H __DATE__ " " __TIME__ //Personal revision number for changes to THIS file.
-  #define STRING_CONFIG_H_AUTHOR "TEST_Pim_29.07.2016" //Who made the changes.
-  #define LEAPFROG_FIRMWARE_VERSION "2.3"
+  #define STRING_CONFIG_H_AUTHOR "Leapfrog 3D Printers" //Who made the changes.
+  #define LEAPFROG_FIRMWARE_VERSION "2.5"
   #define LEAPFROG_MODEL "Bolt"
 
   // This determines the communication speed of the printer
@@ -117,13 +117,13 @@
 
   // default settings
   #define DEFAULT_AXIS_STEPS_PER_UNIT   {(100.0/3.0)*4.0, (160.0/3.0)*2.0, 9600.0/10.0*2.0, 99.30*2.0}  //55.465*2 HS Creatr settings for 16 steps all 16 steping
-  #define DEFAULT_MAX_FEEDRATE          {400, 400, 40, 200}    // (mm/sec) Creatr was 200, 200, 10, 100, 100
-  #define DEFAULT_MAX_ACCELERATION      {450,450,100,30}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
+  #define DEFAULT_MAX_FEEDRATE          {400, 400, 20, 200}    // (mm/sec) Creatr was 200, 200, 10, 100, 100
+  #define DEFAULT_MAX_ACCELERATION      {400, 400, 100, 30}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 
-  #define DEFAULT_ACCELERATION          1000   // X, Y, Z and E max acceleration in mm/s^2 for printing moves
+  #define DEFAULT_ACCELERATION          400   // X, Y, Z and E max acceleration in mm/s^2 for printing moves
   #define DEFAULT_RETRACT_ACCELERATION  1250   // X, Y, Z and E max acceleration in mm/s^2 for r retracts
 
-  #define DEFAULT_XYJERK                25.0   // (mm/sec)
+  #define DEFAULT_XYJERK                20.0   // (mm/sec)
   #define DEFAULT_ZJERK                 0.4     // (mm/sec)
   #define DEFAULT_EJERK                 5.0    // (mm/sec)
 

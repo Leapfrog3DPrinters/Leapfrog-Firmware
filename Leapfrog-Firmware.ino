@@ -1098,7 +1098,7 @@ void process_commands()
 			SERIAL_PROTOCOLPGM(" Y: ");
 			SERIAL_PROTOCOL(-extruder_offset[Y_AXIS][1]);
 			SERIAL_PROTOCOLPGM(" bed_width_correction:");
-			SERIAL_PROTOCOLLN(bed_width_correction);
+			SERIAL_PROTOCOLLN(-bed_width_correction);
 
 			break;
 		case 120: // M120
@@ -1747,13 +1747,14 @@ void printTemperatures()
 		SERIAL_PROTOCOL_F(degHotend(cur_extruder), 1);
 		SERIAL_PROTOCOLPGM(" /");
 		SERIAL_PROTOCOL_F(degTargetHotend(cur_extruder), 1);
+		SERIAL_PROTOCOLPGM(" ");
+	}
 #if TEMP_BED_PIN > -1
-	SERIAL_PROTOCOLPGM(" B:");
+	SERIAL_PROTOCOLPGM("B:");
 	SERIAL_PROTOCOL_F(degBed(), 1);
 	SERIAL_PROTOCOLPGM(" /");
 	SERIAL_PROTOCOL_F(degTargetBed(), 1);
 #endif //TEMP_BED_PIN
-	}
 #ifdef PIDTEMP
 	SERIAL_PROTOCOLPGM(" @:");
 	SERIAL_PROTOCOL(getHeaterPower(target_extruder));
@@ -1860,7 +1861,7 @@ void waitForTargetExtruderTemp()
 			if (residencyStart > -1)
 			{
 				codenum = ((TEMP_RESIDENCY_TIME * 1000UL) - (millis() - residencyStart)) / 1000UL;
-				SERIAL_PROTOCOLLN(codenum);
+				SERIAL_PROTOCOL(codenum);
 			}
 			else
 			{
