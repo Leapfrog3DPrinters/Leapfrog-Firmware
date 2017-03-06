@@ -31,14 +31,14 @@
 void tp_init();  //initialise the heating
 void manage_heater(); //it is critical that this is called periodically.
 
-//low leven conversion routines
+// low level conversion routines
 // do not use this routines and variables outsie of temperature.cpp
 int temp2analog(int celsius, uint8_t e);
 int temp2analogBed(int celsius);
 float analog2temp(int raw, uint8_t e);
 float analog2tempBed(int raw);
 extern int target_raw[EXTRUDERS];  
-extern int current_raw[EXTRUDERS];
+extern int current_raw[EXTRUDERS];        // TODO: ADC returns unsigned 16 bit. Perhaps better to use uint16_t instead?
 extern int target_raw_bed;
 extern int current_raw_bed;
 

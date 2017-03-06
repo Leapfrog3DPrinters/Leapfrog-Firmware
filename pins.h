@@ -73,8 +73,23 @@
 #define TEMP_2_PIN         -1 // 2
 #define HEATER_BED_PIN     10 // 14/15
 #define TEMP_BED_PIN       14 // 1,2 or I2C
-/*  Unused (1) (2) (3) 4 5 6 7 8 9 10 11 12 13 (14) (15) (16) 17 (18) (19) (20) (21) (22) (23) 24 (25) (26) (27) 28 (29) (30) (31)  */
 
+/* Head PCB detection pins:
+ *
+ * Truth table:
+ * Scenario					| HEAD_PCB_OLD_x_PIN	| LOW_TEMP_HOTEND_x_PIN
+ * -------------------------+-----------------------+----------------------
+ * Old head PCB				| HIGH					| HIGH
+ * New head PCB, low temp	| LOW					| HIGH
+ * New head PCB, high temp	| LOW					| LOW
+ * -------------------------+-----------------------+----------------------
+ */
+#define HEAD_PCB_OLD_0_PIN		25	// PA3 AD3
+#define HEAD_PCB_OLD_1_PIN		22	// PA0 AD0
+#define LOW_TEMP_HOTEND_0_PIN	26	// PA4 AD4
+#define LOW_TEMP_HOTEND_1_PIN	23	// PA1 AD1
+
+/*  Unused (1) (2) (3) 4 5 6 7 8 9 10 11 12 13 (14) (15) (16) 17 (18) (19) (20) (21) 24 (27) 28 (29) (30) (31)  */
 #endif
 
 #ifndef KNOWN_BOARD
@@ -82,9 +97,9 @@
 #endif
 
 //List of pins which to ignore when asked to change by gcode, 0 and 1 are RX and TX, do not mess with those!
-#define _E0_PINS E0_STEP_PIN, E0_DIR_PIN, E0_ENABLE_PIN, HEATER_0_PIN,
+#define _E0_PINS E0_STEP_PIN, E0_DIR_PIN, E0_ENABLE_PIN, HEATER_0_PIN, HEAD_PCB_OLD_0_PIN, LOW_TEMP_HOTEND_0_PIN, 
 #if EXTRUDERS > 1
-  #define _E1_PINS E1_STEP_PIN, E1_DIR_PIN, E1_ENABLE_PIN, HEATER_1_PIN,
+  #define _E1_PINS E1_STEP_PIN, E1_DIR_PIN, E1_ENABLE_PIN, HEATER_1_PIN, HEAD_PCB_OLD_1_PIN, LOW_TEMP_HOTEND_1_PIN, 
 #else
   #define _E1_PINS
 #endif
@@ -104,12 +119,12 @@
 	#define SENSITIVE_PINS {0, 1, X0_STEP_PIN, X0_DIR_PIN, X0_ENABLE_PIN, X0_MIN_PIN, X0_MAX_PIN, X1_STEP_PIN, X1_DIR_PIN, X1_ENABLE_PIN, X1_MIN_PIN, X1_MAX_PIN, Y_STEP_PIN, Y_DIR_PIN, Y_ENABLE_PIN, Y_MIN_PIN, Y_MAX_PIN, Z_STEP_PIN, Z_DIR_PIN, Z_ENABLE_PIN, Z_MIN_PIN, Z_MAX_PIN, LED_PIN, PS_ON_PIN, \
 	                        HEATER_BED_PIN, FAN_PIN,                  \
 	                        _E0_PINS _E1_PINS _E2_PINS             \
-	                        TEMP_0_PIN, TEMP_1_PIN, TEMP_2_PIN, TEMP_BED_PIN }
+	                        TEMP_0_PIN, TEMP_1_PIN, TEMP_2_PIN, TEMP_BED_PIN, HEAD_PCB_OLD_0_PIN, HEAD_PCB_OLD_1_PIN, LOW_TEMP_HOTEND_0_PIN, LOW_TEMP_HOTEND_1_PIN }
 #else
     #define SENSITIVE_PINS {0, 1, X0_STEP_PIN, X0_DIR_PIN, X0_ENABLE_PIN, X0_MIN_PIN, X0_MAX_PIN, Y_STEP_PIN, Y_DIR_PIN, Y_ENABLE_PIN, Y_MIN_PIN, Y_MAX_PIN, Z_STEP_PIN, Z_DIR_PIN, Z_ENABLE_PIN, Z_MIN_PIN, Z_MAX_PIN, LED_PIN, PS_ON_PIN, \
 						    HEATER_BED_PIN, FAN_PIN,                  \
 						    _E0_PINS _E1_PINS _E2_PINS             \
-						    TEMP_0_PIN, TEMP_1_PIN, TEMP_2_PIN, TEMP_BED_PIN }
+						    TEMP_0_PIN, TEMP_1_PIN, TEMP_2_PIN, TEMP_BED_PIN, HEAD_PCB_OLD_0_PIN, HEAD_PCB_OLD_1_PIN, LOW_TEMP_HOTEND_0_PIN, LOW_TEMP_HOTEND_1_PIN }
 #endif
 
 #endif

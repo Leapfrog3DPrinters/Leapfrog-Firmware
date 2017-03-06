@@ -143,6 +143,10 @@ float extruder_offset[2][EXTRUDERS] = {
 #endif
 };
 
+// Head PCB and hotend type detection (for up to 2 independent heads):
+bool old_head_pcb[2] = { true, true };
+bool low_temp_hotend[2] = { true, true };
+
 
 //===========================================================================
 //=============================private variables=============================
@@ -292,6 +296,80 @@ void setup_filament_pins()
 }
 
 
+// Output hotend type information
+// Only call after setup_head_pcb_detect() has run
+static void print_head_hotend_type()
+{
+    // First extruder:
+    SERIAL_PROTOCOLPGM(MSG_M115_EXTRUDER_T0);
+    if (old_head_pcb[0]) { SERIAL_PROTOCOLPGM(MSG_M115_THERMISTOR_DETECTED); }
+    else { SERIAL_PROTOCOLPGM(MSG_M115_PT100_DETECTED); }
+
+    SERIAL_PROTOCOLPGM(MSG_M115_EXTRUDER_T0);
+    if (low_temp_hotend[0]) { SERIAL_PROTOCOLPGM(MSG_M115_LOW_TEMP_DETECTED); }
+    else { SERIAL_PROTOCOLPGM(MSG_M115_HIGH_TEMP_DETECTED); }
+
+#if EXTRUDERS > 1
+    SERIAL_PROTOCOLPGM(MSG_M115_EXTRUDER_T1);
+    if (old_head_pcb[1]) { SERIAL_PROTOCOLPGM(MSG_M115_THERMISTOR_DETECTED); }
+    else { SERIAL_PROTOCOLPGM(MSG_M115_PT100_DETECTED); }
+
+    SERIAL_PROTOCOLPGM(MSG_M115_EXTRUDER_T1);
+    if (low_temp_hotend[1]) { SERIAL_PROTOCOLPGM(MSG_M115_LOW_TEMP_DETECTED); }
+    else { SERIAL_PROTOCOLPGM(MSG_M115_HIGH_TEMP_DETECTED); }
+#endif
+}
+
+
+static void setup_head_pcb_detect()
+{
+	// Set the head PCB detection pins as inputs and enable pullups (20-50k):
+	pinMode(HEAD_PCB_OLD_0_PIN, INPUT_PULLUP);
+	pinMode(LOW_TEMP_HOTEND_0_PIN, INPUT_PULLUP);
+#ifdef EXTRUDERS > 1
+	pinMode(HEAD_PCB_OLD_1_PIN, INPUT_PULLUP);
+	pinMode(LOW_TEMP_HOTEND_1_PIN, INPUT_PULLUP);
+#endif
+
+    // Wait for detection lines to be properly settled:
+	delay(50);
+
+	// Determine the head PCB and hotend scenario (see pins.h):
+	old_head_pcb[0] = digitalRead(HEAD_PCB_OLD_0_PIN);			// HIGH iff old head PCB is connected (pulled high due to pull-up)
+	low_temp_hotend[0] = digitalRead(LOW_TEMP_HOTEND_0_PIN);	// HIGH iff a low temp hotend is connected
+#ifdef EXTRUDERS > 1
+	old_head_pcb[1] = digitalRead(HEAD_PCB_OLD_1_PIN);			// HIGH iff old head PCB is connected (pulled high due to pull-up)
+	low_temp_hotend[1] = digitalRead(LOW_TEMP_HOTEND_1_PIN);	// HIGH iff a low temp hotend is connected	
+#endif
+
+	// Check for illegal hotends / head PCB combinations:
+	if (old_head_pcb[0] && !low_temp_hotend[0]) {
+		SERIAL_ERROR_START
+		SERIAL_ERRORPGM(MSG_ERR_HEAD_PCB_HOTEND_COMBO);
+		SERIAL_ERRORLN(0);
+		kill();
+	}
+#ifdef EXTRUDERS > 1
+	if (old_head_pcb[1] && !low_temp_hotend[1]) {
+		SERIAL_ERROR_START
+		SERIAL_ERRORPGM(MSG_ERR_HEAD_PCB_HOTEND_COMBO);
+		SERIAL_ERRORLN(1);
+		kill();
+	}
+	if (old_head_pcb[0] ^ old_head_pcb[1]) {					// Combination of one old and one new head PCB
+		SERIAL_ERROR_START
+		SERIAL_ERRORPGM(MSG_ERR_HEAD_PCB_OLD_NEW);
+		SERIAL_ERRORLN(1);
+		kill();
+	}
+#endif
+
+    // DEBUG:
+    print_head_hotend_type();
+    SERIAL_PROTOCOLLN("");
+}
+
+
 void setup_powerhold()
 {
 #ifdef SUICIDE_PIN
@@ -301,6 +379,7 @@ void setup_powerhold()
 #endif
 #endif
 }
+
 
 void suicide()
 {
@@ -356,6 +435,8 @@ void setup()
 		axis_steps_per_sqr_second[i] = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
 	}
 
+	// Detect head PCB version and hotend type, before starting temperature loop:
+	setup_head_pcb_detect();
 
 	tp_init();    // Initialize temperature loop
 	plan_init();  // Initialize planner;
@@ -368,19 +449,19 @@ void setup()
 
 void loop()
 {
-	if (buflen < (BUFSIZE - 1))
-		get_command();
-	if (buflen)
-	{
+	if (buflen < (BUFSIZE - 1)) { get_command(); }		
+	if (buflen) {
 		process_commands();
 		buflen = (buflen - 1);
 		bufindr = (bufindr + 1) % BUFSIZE;
 	}
+
 	//check heater every n milliseconds
 	manage_heater();
 	manage_inactivity();
 	checkHitEndstops();
 }
+
 
 void get_command()
 {
@@ -1095,6 +1176,7 @@ void process_commands()
 			outputCurrentPosition();
 			break;
 		case 115: // M115 Firmware info string 
+            // TODO: one JSON string?
 			SERIAL_ECHO_START;
 			SERIAL_PROTOCOLPGM(MSG_M115_REPORT);
 			SERIAL_PROTOCOLPGM(" Extruder offset ");
@@ -1103,8 +1185,10 @@ void process_commands()
 			SERIAL_PROTOCOLPGM(" Y: ");
 			SERIAL_PROTOCOL(-extruder_offset[Y_AXIS][1]);
 			SERIAL_PROTOCOLPGM(" bed_width_correction:");
-			SERIAL_PROTOCOLLN(-bed_width_correction);
+			SERIAL_PROTOCOL(-bed_width_correction);
 
+            print_head_hotend_type();
+            SERIAL_PROTOCOLLN("");
 			break;
 		case 120: // M120
 			enable_endstops(false);

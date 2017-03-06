@@ -219,6 +219,10 @@ extern float bed_width_correction;
 // Handling multiple extruders pins
 extern uint8_t active_extruder;
 
+// Head detection:
+extern bool old_head_pcb[2];
+extern bool low_temp_hotend[2];
+
 #if SAFE_MOVES
 extern bool position_known[3];
 #endif

@@ -1,6 +1,18 @@
-# Changlog
+# Changelog
 
-Changes to Leapfrog-Firmware 
+Changes to Leapfrog-Firmware
+
+## 2.7HT
+
+- Added detection and support for high temperature hotend
+- Support for PT-100 temperature sensor
+
+###Config changes
+| Name | Old | New | Comment
+|---|---|---|---
+TEMP_SENSOR_0 | 1 | -3 | PT-100 sensor
+TEMP_SENSOR_1 | 1 | -3 | PT-100 sensor
+
 
 ## 2.7
 

@@ -10,7 +10,7 @@
   //to THIS file by the user have been successfully uploaded into firmware.
   #define STRING_VERSION_CONFIG_H __DATE__ " " __TIME__ //Personal revision number for changes to THIS file.
   #define STRING_CONFIG_H_AUTHOR "Leapfrog 3D Printers" //Who made the changes.
-  #define LEAPFROG_FIRMWARE_VERSION "2.7"
+  #define LEAPFROG_FIRMWARE_VERSION "2.7HT"
   #define LEAPFROG_MODEL "Bolt"
 
   // This determines the communication speed of the printer
@@ -27,8 +27,9 @@
   //
   // 1 is 100k thermistor - best choice for EPCOS 100k (4.7k pullup)
   // 60 is 100k Thermistor with adapted tabel by Erik Heidstra
-  #define TEMP_SENSOR_0 1
-  #define TEMP_SENSOR_1 1
+  // -3 is PT100 sensor with adapted tabel by Maurits Hartman
+  #define TEMP_SENSOR_0 -3      // Use detection mechanism: PT-100 / thermistor
+  #define TEMP_SENSOR_1 -3      // Use detection mechanism: PT-100 / thermistor
   #define TEMP_SENSOR_2 0
   #define TEMP_SENSOR_BED 1
   // #define USE_RTD             // Define when using RTD instead of thermistor
@@ -57,6 +58,7 @@
   // When temperature exceeds max temp, your heater will be switched off.
   // This feature exists to protect your hotend from overheating accidentally, but *NOT* from thermistor short/failure!
   // You should use MINTEMP for thermistor short/failure protection.
+  // TODO: variable MAXTEMP based on high and low temp hotends?
   #define HEATER_0_MAXTEMP 350
   #define HEATER_1_MAXTEMP 320
   #define HEATER_2_MAXTEMP 320
@@ -150,5 +152,6 @@
   #include "Configuration_Bolt_DualX.h";
   #include "Configuration_adv.h"
   #include "thermistortables.h"
+  #include "pt100tables.h"
 
 #endif //__CONFIGURATION_H

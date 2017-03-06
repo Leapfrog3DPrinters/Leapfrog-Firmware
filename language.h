@@ -70,5 +70,15 @@
     #define MSG_ERR_NOT_SUPPORTED "This G-code is not supported"
 	#define MSG_ERR_TEMP_DROP "Temperature has dropped 10 degrees below target."
 	#define MSG_ERR_NOT_HEATING "Temperature has not increased since heating."
+
+	#define MSG_ERR_HEAD_PCB_HOTEND_COMBO "Head PCB not suitable for high temp hotend. Extruder: "
+	#define MSG_ERR_HEAD_PCB_OLD_NEW "Extruders have different head PCBs."
+    #define MSG_M115_EXTRUDER_T0 " T0"
+    #define MSG_M115_EXTRUDER_T1 " T1"
+    #define MSG_M115_PT100_DETECTED "sensor_type: PT-100"
+    #define MSG_M115_THERMISTOR_DETECTED "sensor_type: thermistor"
+    #define MSG_M115_HIGH_TEMP_DETECTED "hotend_type: high_temperature"
+    #define MSG_M115_LOW_TEMP_DETECTED "hotend_type: low_temperature"
+    
 #endif
 #endif // ifndef LANGUAGE_H
