@@ -326,7 +326,7 @@ static void setup_head_pcb_detect()
 	// Set the head PCB detection pins as inputs and enable pullups (20-50k):
 	pinMode(HEAD_PCB_OLD_0_PIN, INPUT_PULLUP);
 	pinMode(LOW_TEMP_HOTEND_0_PIN, INPUT_PULLUP);
-#ifdef EXTRUDERS > 1
+#if EXTRUDERS > 1
 	pinMode(HEAD_PCB_OLD_1_PIN, INPUT_PULLUP);
 	pinMode(LOW_TEMP_HOTEND_1_PIN, INPUT_PULLUP);
 #endif
@@ -337,7 +337,7 @@ static void setup_head_pcb_detect()
 	// Determine the head PCB and hotend scenario (see pins.h):
 	old_head_pcb[0] = digitalRead(HEAD_PCB_OLD_0_PIN);			// HIGH iff old head PCB is connected (pulled high due to pull-up)
 	low_temp_hotend[0] = digitalRead(LOW_TEMP_HOTEND_0_PIN);	// HIGH iff a low temp hotend is connected
-#ifdef EXTRUDERS > 1
+#if EXTRUDERS > 1
 	old_head_pcb[1] = digitalRead(HEAD_PCB_OLD_1_PIN);			// HIGH iff old head PCB is connected (pulled high due to pull-up)
 	low_temp_hotend[1] = digitalRead(LOW_TEMP_HOTEND_1_PIN);	// HIGH iff a low temp hotend is connected	
 #endif
@@ -349,7 +349,7 @@ static void setup_head_pcb_detect()
 		SERIAL_ERRORLN(0);
 		kill();
 	}
-#ifdef EXTRUDERS > 1
+#if EXTRUDERS > 1
 	if (old_head_pcb[1] && !low_temp_hotend[1]) {
 		SERIAL_ERROR_START
 		SERIAL_ERRORPGM(MSG_ERR_HEAD_PCB_HOTEND_COMBO);
@@ -666,7 +666,7 @@ static void homeaxis(int axis)
 {
 #define HOMEAXIS_DO(LETTER) \
   ((LETTER##_MIN_PIN > -1 && LETTER##_HOME_DIR==-1) || (LETTER##_MAX_PIN > -1 && LETTER##_HOME_DIR==1))
-#define HOMEAXIS_DO_X \ 
+#define HOMEAXIS_DO_X \
 	((X0_MIN_PIN > -1 && X_HOME_DIR == -1) || (X0_MAX_PIN > -1 && X_HOME_DIR == 1))
 
 		if (axis == X_AXIS ? HOMEAXIS_DO_X :

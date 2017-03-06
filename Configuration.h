@@ -149,7 +149,7 @@
   // Increase the FAN pwm frequency. Removes the PWM noise but increases heating in the FET/Arduino
   #define FAST_PWM_FAN
 
-  #include "Configuration_Bolt_DualX.h";
+  #include "Configuration_Bolt_DualX.h"
   #include "Configuration_adv.h"
   #include "thermistortables.h"
   #include "pt100tables.h"

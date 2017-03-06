@@ -54,7 +54,7 @@
 #ifdef DUAL_X
 #define WRITE_X_STEP(v) { \
 	if(syncmode_enabled) { WRITE(X0_STEP_PIN, v);  WRITE(X1_STEP_PIN, v);  } \
- 	else if(current_block->active_extruder == 1) { WRITE(X1_STEP_PIN, v); } else { WRITE(X0_STEP_PIN, v); } \ 
+ 	else if(current_block->active_extruder == 1) { WRITE(X1_STEP_PIN, v); } else { WRITE(X0_STEP_PIN, v); } \
  }
 #else
   #define WRITE_X_STEP(v) WRITE(X0_STEP_PIN, v)

@@ -3,7 +3,7 @@
 
 #include "Marlin.h"
 
-#if defined(HEATER_0_USES_DETECTION) || defined(HEATER_1_USES_DETECTION)
+#if (defined(HEATER_0_USES_DETECTION) || defined(HEATER_1_USES_DETECTION))
 // PT-100 temperature sensor.
 // PT-100 is positive temperature coefficient: no inversion applied to the raw measured ADC value
 // Measured ADC result is 10 bits, put into an unsigned 16 bit integer (rght adjusted).
@@ -95,4 +95,4 @@ const uint16_t temptable_pt100[][2] PROGMEM = {
 #define temptable_pt100_len (sizeof(temptable_pt100) / sizeof(temptable_pt100[0]))
 #endif
 
-#endif PT100TABLES_H_
+#endif /* PT100TABLES_H_ */
