@@ -529,7 +529,7 @@ XYZ_CONSTS_FROM_CONFIG(float, max_length, MAX_LENGTH);
 XYZ_CONSTS_FROM_CONFIG(float, home_retract_mm, HOME_RETRACT_MM);
 XYZ_CONSTS_FROM_CONFIG(signed char, home_dir, HOME_DIR);
 
-static inline float bed_width() { return base_max_pos(X_AXIS) + bed_width_correction; }
+static inline float bed_width() { return base_max_pos(X_AXIS) - base_min_pos(X_AXIS) + bed_width_correction; }
 
 static void axis_is_at_home(int axis)
 {
@@ -543,23 +543,21 @@ static void axis_is_at_home(int axis)
 			min_pos[axis] = base_min_pos(axis) + add_homeing[axis];
 
 			if (inverted_x0_mode)
-				max_pos[axis] = bed_width() / 2.0 + add_homeing[axis] + extruder_offset[X_AXIS][1] / 2.0;
+				max_pos[axis] = base_min_pos(X_AXIS) + bed_width() / 2.0 + add_homeing[axis] + extruder_offset[X_AXIS][1] / 2.0;
 			else
-				max_pos[axis] = bed_width() + add_homeing[axis] - actual_dual_x_offset;
+				max_pos[axis] = base_min_pos(X_AXIS) + bed_width() + add_homeing[axis] - actual_dual_x_offset;
 		}
 		else if (active_extruder == 1)
 		{
 			current_position[axis] = base_min_pos(axis) + add_homeing[axis];
 			min_pos[axis] = base_min_pos(axis) + add_homeing[axis];
-			//max_pos[axis] =          bed_width() + add_homeing[axis] + extruder_offset[X_AXIS][1];
-			max_pos[axis] = min(bed_width(), last_known_x[0]) + extruder_offset[X_AXIS][1];
+			max_pos[axis] = min(base_min_pos(X_AXIS) + bed_width(), last_known_x[0]) + extruder_offset[X_AXIS][1];
 		}
 		else
 		{
-			current_position[axis] = bed_width() + add_homeing[axis];
-			//min_pos[axis] =          base_min_pos(axis) + add_homeing[axis] - extruder_offset[X_AXIS][1];
+			current_position[axis] = base_min_pos(X_AXIS) + bed_width() + add_homeing[axis];
 			min_pos[axis] = max(base_min_pos(axis), last_known_x[1]) - extruder_offset[X_AXIS][1];
-			max_pos[axis] = bed_width() + add_homeing[axis];
+			max_pos[axis] = base_min_pos(X_AXIS) + bed_width() + add_homeing[axis];
 		}
 	}
 	else
@@ -883,12 +881,7 @@ void process_commands()
 			//TODO: Remove this
 
 			// Dump status about X
-			//dumpstatus();
-			// DEBUG: max_software_enstops hit
-			SERIAL_PROTOCOLLN("max software endstops")
-			SERIAL_PROTOCOLLN(max_pos[X_AXIS])
-			SERIAL_PROTOCOLLN(max_pos[Y_AXIS])
-			SERIAL_PROTOCOLLN(max_pos[Z_AXIS])
+			dumpstatus();
 			break;
 		case 104: // M104
 			if (setTargetedHotend(104))
@@ -1909,6 +1902,7 @@ static void beginSyncMode(float offset, bool do_invert_x0)
 
 	// Correct offset 
 	// Limit offset to reasonable values. Use center for offset=0
+	// **Note: this is the offset, not the absolute position of tool0
 	if (offset < 0.01) // offset is a float, so compare with error margin
 		offset = (bed_width() - extruder_offset[X_AXIS][1]) / 2.0; // Move halfway !! Something weird happens here: adding scalars to arrays = bad
 	else if (offset < -extruder_offset[X_AXIS][1])
@@ -1929,9 +1923,6 @@ static void beginSyncMode(float offset, bool do_invert_x0)
 
 		// Enable/disable mirrormode
 		inverted_x0_mode = do_invert_x0;
-
-		// Move left and right in position
-		//homeDualX();
 	}
 }
 
@@ -1974,7 +1965,7 @@ static void updateXMinMaxPos()
 	{
 		// Right tool
 		min_pos[X_AXIS] = last_known_x[1] - extruder_offset[X_AXIS][1];
-		max_pos[X_AXIS] = bed_width() + add_homeing[X_AXIS];
+		max_pos[X_AXIS] = base_min_pos(X_AXIS) + bed_width() + add_homeing[X_AXIS];
 	}
 	else
 	{
@@ -2021,7 +2012,7 @@ static void homeDualX()
 		{
 			// Bring right tool in position
 			feedrate = homing_feedrate[X_AXIS];
-			destination[X_AXIS] = actual_dual_x_offset;
+			destination[X_AXIS] = base_min_pos(X_AXIS) + actual_dual_x_offset; // Left is at base_min_pos here
 			line_to_destination();
 
 			// Wait for it
