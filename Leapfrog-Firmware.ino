@@ -821,6 +821,7 @@ void process_commands()
 			SERIAL_ECHOLN(MSG_NO_DUALX);
 
 #else
+			bool temp_sync = true;
 
 			if (code_seen('S'))
 				dual_x_mode = code_value();
@@ -836,11 +837,14 @@ void process_commands()
 				temp_offset = code_value();
 			else
 				temp_offset = 0;
+
+			if (code_seen('U') && code_value() == 0)
+				temp_sync = false;
 			
 			if (dual_x_mode == 3)
-				beginSyncMode(0.0, true);
+				beginSyncMode(0.0, true, temp_sync);
 			else if (dual_x_mode == 2)
-				beginSyncMode(dual_x_offset, false);
+				beginSyncMode(dual_x_offset, false, temp_sync);
 			else if (dual_x_mode == 1)
 			{
 				endSyncMode();
@@ -1891,15 +1895,18 @@ void waitForTargetExtruderTemp()
 // offset:        distance between tools. Min: extruder_offset, Max: bed_width() - extruder_offset. Value 0
 //                will set the offset to half of the print area size
 // do_invert_x0:  true enables mirrored synchronous mode
-static void beginSyncMode(float offset, bool do_invert_x0)
+// temp_sync:	  heat t0 to t1 temperature target 
+static void beginSyncMode(float offset, bool do_invert_x0, bool temp_sync)
 {
 	// Check if temperatures are in sync, update if necessary
-	float current_left_temp_target = degTargetHotend(1);
-	if (current_left_temp_target != 0)
-		setTargetHotend(current_left_temp_target + temp_offset, 0);
-	else
-		setTargetHotend(0, 0);
-
+	if(temp_sync)
+	{
+		float current_left_temp_target = degTargetHotend(1);
+		if (current_left_temp_target != 0)
+			setTargetHotend(current_left_temp_target + temp_offset, 0);
+		else
+			setTargetHotend(0, 0);
+	}
 	// Correct offset 
 	// Limit offset to reasonable values. Use center for offset=0
 	// **Note: this is the offset, not the absolute position of tool0
