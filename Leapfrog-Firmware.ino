@@ -120,12 +120,13 @@ int saved_feedmultiply;
 volatile bool feedmultiplychanged = false;
 volatile int extrudemultiply = 100; //100->1 1000->2
 float bed_width_correction = 0.0;
+float parking_offset = DEFAULT_PARK_OFFSET;
 float current_position[NUM_AXIS] = { 0.0, 0.0, 0.0, 0.0 };
 float add_homeing[3] = { 0.0,0.0,0.0 };
 float min_pos[3] = { X_MIN_POS, Y_MIN_POS, Z_MIN_POS };
 float max_pos[3] = { X_MAX_POS, Y_MAX_POS, Z_MAX_POS };
 #ifdef DUAL_X
-float parking_pos[2] = { X0_PARK_POS,X1_PARK_POS }; // Only X-axis, TODO: Store in EEPROM
+float parking_pos[2] = { X_MIN_POS + DEFAULT_PARK_OFFSET, X_MAX_POS - DEFAULT_PARK_OFFSET }; // Only X-axis, TODO: Store in EEPROM
 #endif
 uint8_t active_extruder = 0;
 unsigned char FanSpeed = 0;
@@ -356,6 +357,8 @@ void setup()
 		axis_steps_per_sqr_second[i] = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
 	}
 
+	// Now we have the EEPROM, set the parking positions
+	updateParkingPos();
 
 	tp_init();    // Initialize temperature loop
 	plan_init();  // Initialize planner;
@@ -529,6 +532,7 @@ XYZ_CONSTS_FROM_CONFIG(float, max_length, MAX_LENGTH);
 XYZ_CONSTS_FROM_CONFIG(float, home_retract_mm, HOME_RETRACT_MM);
 XYZ_CONSTS_FROM_CONFIG(signed char, home_dir, HOME_DIR);
 
+//TODO: Get rid of the approach and work solely with base_min_pos and base_max_pos (and incorporate bed_width_correction into base_base_pos)
 static inline float bed_width() { return base_max_pos(X_AXIS) - base_min_pos(X_AXIS) + bed_width_correction; }
 
 static void axis_is_at_home(int axis)
@@ -864,19 +868,10 @@ void process_commands()
 			SERIAL_ECHO_START;
 			SERIAL_ECHOLN(MSG_NO_DUALX);
 #else
-			float parking_offset = DEFAULT_PARK_OFFSET;
-
 			if (code_seen('P')) parking_offset = code_value();
-			if (code_seen('T'))
-			{
-				target_extruder = code_value();
-				setParkingOffset(target_extruder, parking_offset);
-			}
-			else
-			{
-				setParkingOffset(0, parking_offset);
-				setParkingOffset(1, parking_offset);
-			}
+
+			updateParkingPos();
+			
 #endif
 		}
 		break;
@@ -1212,6 +1207,7 @@ void process_commands()
 			if (code_seen('S'))
 			{
 				bed_width_correction = constrain(-code_value(), -15, 15);
+				updateParkingPos();
 				updateXMinMaxPos();
 			}
 			break;
@@ -1947,21 +1943,15 @@ static void endSyncMode()
 	}
 }
 
-// Sets the parking position of a tool
-// extruder: tool number
-// offset: offset from printing area; must be >= 0
-static void setParkingOffset(int extruder, float offset)
+// Updates the absolute parking positions (useful on startup and for calibration)
+static void updateParkingPos()
 {
-	// Limit offset to half bed size 
-	// offset = constrain(offset, 0, bed_width() / 2.0 + extruder_offset[X_AXIS][1] / 2.0); // Could cause some funny side effects - removed for now.
-
 	// 'Forget' the extruder may have been parked (to prevent toolswitch assuming wrong parking pos)
-	is_parked[extruder] = false;
+	is_parked[0] = false;
+	is_parked[1] = false;
 
-	if (extruder == 0)
-		parking_pos[extruder] = bed_width() - offset;
-	else if (extruder == 1)
-		parking_pos[extruder] = bed_width() + offset;
+	parking_pos[0] = base_min_pos(X_AXIS) + bed_width() - parking_offset;
+	parking_pos[1] = base_min_pos(X_AXIS) + parking_offset;
 }
 
 // Updates the software endstops based on the last known position of the other extruder

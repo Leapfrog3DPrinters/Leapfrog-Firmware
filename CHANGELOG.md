@@ -8,6 +8,7 @@ Changes to Leapfrog-Firmware
 - Changed parking distance. 
 - Changed Z-homing speed 
 - Added min_bed_temp warning and check
+- Fixed parking position and calibration bug
 
 ###Config changes
 | Name | Old | New

@@ -93,10 +93,7 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define Y_HOME_POS Y_MAX_POS  //350 original
 #define Z_HOME_POS Z_MIN_POS
 
-#define DEFAULT_PARK_OFFSET 1.0
-
-#define X0_PARK_POS X_MAX_POS - DEFAULT_PARK_OFFSET
-#define X1_PARK_POS X_MIN_POS + DEFAULT_PARK_OFFSET
+#define DEFAULT_PARK_OFFSET 2.0
 
 // Max length 
 #define X_MAX_LENGTH (X_MAX_POS - X_MIN_POS)
