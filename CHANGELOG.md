@@ -5,10 +5,11 @@ Changes to Leapfrog-Firmware
 ## 2.7
 
 - Changed bed coordinates for X
-- Changed parking distance. 
+- Changed parking distance 
 - Changed Z-homing speed 
 - Added min_bed_temp warning and check
 - Added ability to skip temperature sync when enabling sync mode
+- Added ability to interrupt M140 and M190 commands with a M108 command
 - Removed individual parking positions
 - Fixed parking position and calibration bug
 

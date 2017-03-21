@@ -1600,37 +1600,6 @@ void manage_inactivity()
 	check_axes_activity();
 }
 
-// void break_heating_check()
-// {
-// 	// Check for any commands to be added to the buffer
-// 	// We are overriding the current buffer position here
-// 	readCommand();
-
-// 	if (buflen)
-// 	{
-// 		// Store the current buffer position as we're gonna read ahead
-// 		int bufindr_bak = bufindr;
-
-// 		// We need to check the entire buffer here, as something else could have been sent inbetween
-// 		for (int i = 0; i<BUFSIZE; i++)
-// 		{
-// 			// Skip to an absolute position in the buffer
-// 			bufindr = i;
-
-// 			if (cmdbuffer[bufindr] != 0)
-// 			{
-// 				break_heating_wait = code_seen('M') && (int)code_value() == 108;
-
-// 				if(break_heating_wait)
-// 					break; // Break from this for loop, not the heating loop
-// 			}
-// 		}
-
-// 		// Restore the buffer position to where we were
-// 		bufindr = bufindr_bak;
-// 	}
-// }
-
 void kill()
 {
 	cli(); // Stop interrupts
