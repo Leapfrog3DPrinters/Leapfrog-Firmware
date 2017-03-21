@@ -176,6 +176,7 @@ const int sensitive_pins[] = SENSITIVE_PINS; // Sensitive pin list for M42
 static unsigned long previous_millis_cmd = 0;
 static unsigned long max_inactive_time = 0;
 static unsigned long stepper_inactive_time = DEFAULT_STEPPER_DEACTIVE_TIME * 1000l;
+static bool break_heating_wait = false;
 
 static unsigned long starttime = 0;
 static unsigned long stoptime = 0;
@@ -368,17 +369,23 @@ void setup()
 	SERIAL_PROTOCOLLNPGM("start");
 }
 
-
-void loop()
+void readCommand()
 {
 	if (buflen < (BUFSIZE - 1))
 		get_command();
+}
+
+void loop()
+{
+	readCommand();
+
 	if (buflen)
 	{
 		process_commands();
 		buflen = (buflen - 1);
 		bufindr = (bufindr + 1) % BUFSIZE;
 	}
+
 	//check heater every n milliseconds
 	manage_heater();
 	manage_inactivity();
@@ -476,6 +483,10 @@ void get_command()
 					default:
 						break;
 					}
+				}
+				if ((strstr(cmdbuffer[bufindw], "M108") != NULL))
+				{
+					break_heating_wait = true;
 				}
 				bufindw = (bufindw + 1) % BUFSIZE;
 				buflen += 1;
@@ -958,10 +969,12 @@ void process_commands()
 #endif
 			setWatch();
 
-			waitForTargetExtruderTemp();
+			bool heated = waitForTargetExtruderTemp();
 
 #ifdef DUAL_X
-			if (syncmode_enabled)
+			// Wait for the other heater to reach target temp.
+			// Only if the waiting loop wasn't interrupted
+			if (syncmode_enabled && heated)
 			{
 				target_extruder = 1 - target_extruder;
 				waitForTargetExtruderTemp();
@@ -985,6 +998,14 @@ void process_commands()
 				}
 				manage_heater();
 				manage_inactivity();
+
+				// Continue filling the command buffer, whilst checking for M108s
+				readCommand();
+				if (break_heating_wait)
+				{
+					break_heating_wait = false;
+					break;
+				}
 			}
 			previous_millis_cmd = millis();
 #endif
@@ -1089,12 +1110,13 @@ void process_commands()
 		case 115: // M115 Firmware info string 
 			SERIAL_ECHO_START;
 			SERIAL_PROTOCOLPGM(MSG_M115_REPORT);
-			SERIAL_PROTOCOLPGM(" Extruder offset ");
-			SERIAL_PROTOCOLPGM("X: ");
+			SERIAL_PROTOCOLPGM(" EXTRUDER_COUNT:")
+			SERIAL_PROTOCOL(EXTRUDERS);
+			SERIAL_PROTOCOLPGM(" EXTRUDER_OFFSET_X:");
 			SERIAL_PROTOCOL(-extruder_offset[X_AXIS][1]);
-			SERIAL_PROTOCOLPGM(" Y: ");
+			SERIAL_PROTOCOLPGM(" EXTRUDER_OFFSET_Y:");
 			SERIAL_PROTOCOL(-extruder_offset[Y_AXIS][1]);
-			SERIAL_PROTOCOLPGM(" bed_width_correction:");
+			SERIAL_PROTOCOLPGM(" BED_WIDTH_CORRECTION:");
 			SERIAL_PROTOCOLLN(-bed_width_correction);
 
 			break;
@@ -1578,6 +1600,37 @@ void manage_inactivity()
 	check_axes_activity();
 }
 
+// void break_heating_check()
+// {
+// 	// Check for any commands to be added to the buffer
+// 	// We are overriding the current buffer position here
+// 	readCommand();
+
+// 	if (buflen)
+// 	{
+// 		// Store the current buffer position as we're gonna read ahead
+// 		int bufindr_bak = bufindr;
+
+// 		// We need to check the entire buffer here, as something else could have been sent inbetween
+// 		for (int i = 0; i<BUFSIZE; i++)
+// 		{
+// 			// Skip to an absolute position in the buffer
+// 			bufindr = i;
+
+// 			if (cmdbuffer[bufindr] != 0)
+// 			{
+// 				break_heating_wait = code_seen('M') && (int)code_value() == 108;
+
+// 				if(break_heating_wait)
+// 					break; // Break from this for loop, not the heating loop
+// 			}
+// 		}
+
+// 		// Restore the buffer position to where we were
+// 		bufindr = bufindr_bak;
+// 	}
+// }
+
 void kill()
 {
 	cli(); // Stop interrupts
@@ -1833,7 +1886,7 @@ void dumpstatus()
 #endif
 }
 
-void waitForTargetExtruderTemp()
+bool waitForTargetExtruderTemp()
 {
 	unsigned long codenum;
 	/* See if we are heating up or cooling down */
@@ -1852,7 +1905,8 @@ void waitForTargetExtruderTemp()
 	{
 #endif //TEMP_RESIDENCY_TIME
 		if ((millis() - codenum) > 1000UL)
-		{ //Print Temp Reading and remaining time every 1 second while heating up/cooling down
+		{ 			
+			//Print Temp Reading and remaining time every 1 second while heating up/cooling down
 			printTemperatures();
 #ifdef TEMP_RESIDENCY_TIME
 			SERIAL_PROTOCOLPGM(" W:");
@@ -1881,9 +1935,20 @@ void waitForTargetExtruderTemp()
 			residencyStart = millis();
 		}
 #endif //TEMP_RESIDENCY_TIME
+		
+		// Continue filling the command buffer, whilst checking for M108s
+		readCommand();
+		if (break_heating_wait)
+		{
+			break_heating_wait = false;
+
+			// By returning false, we prevent checking the other extruder in sync mode
+			return false;
+		}
 	}
 	starttime = millis();
 	previous_millis_cmd = millis();
+	return true;
 }
 
 #ifdef DUAL_X
