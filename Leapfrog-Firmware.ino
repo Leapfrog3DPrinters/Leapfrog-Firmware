@@ -484,12 +484,19 @@ void get_command()
 						break;
 					}
 				}
-				if ((strstr(cmdbuffer[bufindw], "M108") != NULL))
+
+				if (strstr(cmdbuffer[bufindw], "M108") != NULL)
 				{
-					break_heating_wait = true;
+					// Don't add the command to the buffer and pretend this never happened.
+					break_heating_wait= true;
+					// It never happened, so we don't send OK
+					//SERIAL_PROTOCOLLNPGM(MSG_OK);
 				}
-				bufindw = (bufindw + 1) % BUFSIZE;
-				buflen += 1;
+				else
+				{
+					bufindw = (bufindw + 1) % BUFSIZE;
+					buflen += 1;
+				}
 			}
 			serial_count = 0; //clear buffer
 		}
@@ -988,6 +995,7 @@ void process_commands()
 #if TEMP_BED_PIN > -1
 			if (code_seen('S')) setTargetBed(code_value());
 			codenum = millis();
+			break_heating_wait = false;
 			while (isHeatingBed())
 			{
 				if ((millis() - codenum) > 1000) //Print Temp Reading every 1 second while heating up.
@@ -1860,7 +1868,7 @@ bool waitForTargetExtruderTemp()
 	unsigned long codenum;
 	/* See if we are heating up or cooling down */
 	bool target_direction = isHeatingHotend(target_extruder); // true if heating, false if cooling
-
+	break_heating_wait = false;
 #ifdef TEMP_RESIDENCY_TIME
 	long residencyStart;
 	residencyStart = -1;
