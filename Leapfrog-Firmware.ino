@@ -730,6 +730,9 @@ void process_commands()
 
 			home_all_axis = !(homeX || homeY || homeZ) || (homeX && homeY && homeZ);
 
+			// Wait before we do anything (like switching off syncmode)
+			st_synchronize();
+
 			if (home_all_axis || homeX)
 			{
 				
