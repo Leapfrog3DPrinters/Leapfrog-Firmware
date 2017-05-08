@@ -41,7 +41,8 @@
 	#define MSG_M105_INVALID_EXTRUDER "M105 Invalid extruder "
 	#define MSG_ERR_NO_THERMISTORS "No thermistors - no temp"
 	#define MSG_M109_INVALID_EXTRUDER "M109 Invalid extruder "
-	#define MSG_M115_REPORT "Leapfrog Firmware: " LEAPFROG_FIRMWARE_VERSION " Model: " LEAPFROG_MODEL " PROTOCOL_VERSION: " PROTOCOL_VERSION " FIRMWARE_NAME:Marlin V1;"
+	// For compatibility reasons, Model is still included
+	#define MSG_M115_REPORT "LEAPFROG_FIRMWARE:" LEAPFROG_FIRMWARE_VERSION " MACHINE_TYPE:" LEAPFROG_MODEL " Model:" LEAPFROG_MODEL " PROTOCOL_VERSION:" PROTOCOL_VERSION " FIRMWARE_NAME:Marlin V1"
 	#define MSG_COUNT_X " Count X:"
 	#define MSG_ERR_KILLED "Printer halted. kill() called !!"
 	#define MSG_ERR_STOPPED "Printer stopped due to errors. Fix the error and use M999 to restart!. (Temperature is reset. Set it before restarting)"

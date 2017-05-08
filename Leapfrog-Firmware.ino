@@ -120,12 +120,13 @@ int saved_feedmultiply;
 volatile bool feedmultiplychanged = false;
 volatile int extrudemultiply = 100; //100->1 1000->2
 float bed_width_correction = 0.0;
+float parking_offset = DEFAULT_PARK_OFFSET;
 float current_position[NUM_AXIS] = { 0.0, 0.0, 0.0, 0.0 };
 float add_homeing[3] = { 0.0,0.0,0.0 };
 float min_pos[3] = { X_MIN_POS, Y_MIN_POS, Z_MIN_POS };
 float max_pos[3] = { X_MAX_POS, Y_MAX_POS, Z_MAX_POS };
 #ifdef DUAL_X
-float parking_pos[2] = { X0_PARK_POS,X1_PARK_POS }; // Only X-axis, TODO: Store in EEPROM
+float parking_pos[2] = { X_MIN_POS + DEFAULT_PARK_OFFSET, X_MAX_POS - DEFAULT_PARK_OFFSET }; // Only X-axis, TODO: Store in EEPROM
 #endif
 uint8_t active_extruder = 0;
 unsigned char FanSpeed = 0;
@@ -179,6 +180,7 @@ const int sensitive_pins[] = SENSITIVE_PINS; // Sensitive pin list for M42
 static unsigned long previous_millis_cmd = 0;
 static unsigned long max_inactive_time = 0;
 static unsigned long stepper_inactive_time = DEFAULT_STEPPER_DEACTIVE_TIME * 1000l;
+static bool break_heating_wait = false;
 
 static unsigned long starttime = 0;
 static unsigned long stoptime = 0;
@@ -435,8 +437,12 @@ void setup()
 		axis_steps_per_sqr_second[i] = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
 	}
 
+
 	// Detect head PCB version and hotend type, before starting temperature loop:
 	setup_head_pcb_detect();
+
+	// Now we have the EEPROM, set the parking positions
+	updateParkingPos();
 
 	tp_init();    // Initialize temperature loop
 	plan_init();  // Initialize planner;
@@ -446,11 +452,18 @@ void setup()
 	SERIAL_PROTOCOLLNPGM("start");
 }
 
+void readCommand()
+{
+	if (buflen < (BUFSIZE - 1))
+		get_command();
+}
 
 void loop()
 {
-	if (buflen < (BUFSIZE - 1)) { get_command(); }		
-	if (buflen) {
+	readCommand();
+
+	if (buflen)
+	{
 		process_commands();
 		buflen = (buflen - 1);
 		bufindr = (bufindr + 1) % BUFSIZE;
@@ -555,8 +568,19 @@ void get_command()
 						break;
 					}
 				}
-				bufindw = (bufindw + 1) % BUFSIZE;
-				buflen += 1;
+
+				if (strstr(cmdbuffer[bufindw], "M108") != NULL)
+				{
+					// Don't add the command to the buffer and pretend this never happened.
+					break_heating_wait= true;
+					// It never happened, so we don't send OK
+					//SERIAL_PROTOCOLLNPGM(MSG_OK);
+				}
+				else
+				{
+					bufindw = (bufindw + 1) % BUFSIZE;
+					buflen += 1;
+				}
 			}
 			serial_count = 0; //clear buffer
 		}
@@ -610,7 +634,8 @@ XYZ_CONSTS_FROM_CONFIG(float, max_length, MAX_LENGTH);
 XYZ_CONSTS_FROM_CONFIG(float, home_retract_mm, HOME_RETRACT_MM);
 XYZ_CONSTS_FROM_CONFIG(signed char, home_dir, HOME_DIR);
 
-static inline float bed_width() { return base_max_pos(X_AXIS) + bed_width_correction; }
+//TODO: Get rid of the approach and work solely with base_min_pos and base_max_pos (and incorporate bed_width_correction into base_base_pos)
+static inline float bed_width() { return base_max_pos(X_AXIS) - base_min_pos(X_AXIS) + bed_width_correction; }
 
 static void axis_is_at_home(int axis)
 {
@@ -624,23 +649,21 @@ static void axis_is_at_home(int axis)
 			min_pos[axis] = base_min_pos(axis) + add_homeing[axis];
 
 			if (inverted_x0_mode)
-				max_pos[axis] = bed_width() / 2.0 + add_homeing[axis] + extruder_offset[X_AXIS][1] / 2.0;
+				max_pos[axis] = base_min_pos(X_AXIS) + bed_width() / 2.0 + add_homeing[axis] + extruder_offset[X_AXIS][1] / 2.0;
 			else
-				max_pos[axis] = bed_width() + add_homeing[axis] - actual_dual_x_offset;
+				max_pos[axis] = base_min_pos(X_AXIS) + bed_width() + add_homeing[axis] - actual_dual_x_offset;
 		}
 		else if (active_extruder == 1)
 		{
 			current_position[axis] = base_min_pos(axis) + add_homeing[axis];
 			min_pos[axis] = base_min_pos(axis) + add_homeing[axis];
-			//max_pos[axis] =          bed_width() + add_homeing[axis] + extruder_offset[X_AXIS][1];
-			max_pos[axis] = min(bed_width(), last_known_x[0]) + extruder_offset[X_AXIS][1];
+			max_pos[axis] = min(base_min_pos(X_AXIS) + bed_width(), last_known_x[0]) + extruder_offset[X_AXIS][1];
 		}
 		else
 		{
-			current_position[axis] = bed_width() + add_homeing[axis];
-			//min_pos[axis] =          base_min_pos(axis) + add_homeing[axis] - extruder_offset[X_AXIS][1];
+			current_position[axis] = base_min_pos(X_AXIS) + bed_width() + add_homeing[axis];
 			min_pos[axis] = max(base_min_pos(axis), last_known_x[1]) - extruder_offset[X_AXIS][1];
-			max_pos[axis] = bed_width() + add_homeing[axis];
+			max_pos[axis] = base_min_pos(X_AXIS) + bed_width() + add_homeing[axis];
 		}
 	}
 	else
@@ -791,6 +814,9 @@ void process_commands()
 
 			home_all_axis = !(homeX || homeY || homeZ) || (homeX && homeY && homeZ);
 
+			// Wait before we do anything (like switching off syncmode)
+			st_synchronize();
+
 			if (home_all_axis || homeX)
 			{
 				
@@ -904,6 +930,7 @@ void process_commands()
 			SERIAL_ECHOLN(MSG_NO_DUALX);
 
 #else
+			bool temp_sync = true;
 
 			if (code_seen('S'))
 				dual_x_mode = code_value();
@@ -919,11 +946,14 @@ void process_commands()
 				temp_offset = code_value();
 			else
 				temp_offset = 0;
+
+			if (code_seen('U') && code_value() == 0)
+				temp_sync = false;
 			
 			if (dual_x_mode == 3)
-				beginSyncMode(0.0, true);
+				beginSyncMode(0.0, true, temp_sync);
 			else if (dual_x_mode == 2)
-				beginSyncMode(dual_x_offset, false);
+				beginSyncMode(dual_x_offset, false, temp_sync);
 			else if (dual_x_mode == 1)
 			{
 				endSyncMode();
@@ -943,19 +973,10 @@ void process_commands()
 			SERIAL_ECHO_START;
 			SERIAL_ECHOLN(MSG_NO_DUALX);
 #else
-			float parking_offset = DEFAULT_PARK_OFFSET;
-
 			if (code_seen('P')) parking_offset = code_value();
-			if (code_seen('T'))
-			{
-				target_extruder = code_value();
-				setParkingOffset(target_extruder, parking_offset);
-			}
-			else
-			{
-				setParkingOffset(0, parking_offset);
-				setParkingOffset(1, parking_offset);
-			}
+
+			updateParkingPos();
+			
 #endif
 		}
 		break;
@@ -964,12 +985,7 @@ void process_commands()
 			//TODO: Remove this
 
 			// Dump status about X
-			//dumpstatus();
-			// DEBUG: max_software_enstops hit
-			SERIAL_PROTOCOLLN("max software endstops")
-			SERIAL_PROTOCOLLN(max_pos[X_AXIS])
-			SERIAL_PROTOCOLLN(max_pos[Y_AXIS])
-			SERIAL_PROTOCOLLN(max_pos[Z_AXIS])
+			dumpstatus();
 			break;
 		case 104: // M104
 			if (setTargetedHotend(104))
@@ -1047,10 +1063,12 @@ void process_commands()
 #endif
 			setWatch();
 
-			waitForTargetExtruderTemp();
+			bool heated = waitForTargetExtruderTemp();
 
 #ifdef DUAL_X
-			if (syncmode_enabled)
+			// Wait for the other heater to reach target temp.
+			// Only if the waiting loop wasn't interrupted
+			if (syncmode_enabled && heated)
 			{
 				target_extruder = 1 - target_extruder;
 				waitForTargetExtruderTemp();
@@ -1064,6 +1082,7 @@ void process_commands()
 #if TEMP_BED_PIN > -1
 			if (code_seen('S')) setTargetBed(code_value());
 			codenum = millis();
+			break_heating_wait = false;
 			while (isHeatingBed())
 			{
 				if ((millis() - codenum) > 1000) //Print Temp Reading every 1 second while heating up.
@@ -1074,6 +1093,14 @@ void process_commands()
 				}
 				manage_heater();
 				manage_inactivity();
+
+				// Continue filling the command buffer, whilst checking for M108s
+				readCommand();
+				if (break_heating_wait)
+				{
+					break_heating_wait = false;
+					break;
+				}
 			}
 			previous_millis_cmd = millis();
 #endif
@@ -1179,13 +1206,14 @@ void process_commands()
             // TODO: one JSON string?
 			SERIAL_ECHO_START;
 			SERIAL_PROTOCOLPGM(MSG_M115_REPORT);
-			SERIAL_PROTOCOLPGM(" Extruder offset ");
-			SERIAL_PROTOCOLPGM("X: ");
+			SERIAL_PROTOCOLPGM(" EXTRUDER_COUNT:")
+			SERIAL_PROTOCOL(EXTRUDERS);
+			SERIAL_PROTOCOLPGM(" EXTRUDER_OFFSET_X:");
 			SERIAL_PROTOCOL(-extruder_offset[X_AXIS][1]);
-			SERIAL_PROTOCOLPGM(" Y: ");
+			SERIAL_PROTOCOLPGM(" EXTRUDER_OFFSET_Y:");
 			SERIAL_PROTOCOL(-extruder_offset[Y_AXIS][1]);
-			SERIAL_PROTOCOLPGM(" bed_width_correction:");
-			SERIAL_PROTOCOL(-bed_width_correction);
+			SERIAL_PROTOCOLPGM(" BED_WIDTH_CORRECTION:");
+			SERIAL_PROTOCOLLN(-bed_width_correction);
 
             print_head_hotend_type();
             SERIAL_PROTOCOLLN("");
@@ -1299,6 +1327,7 @@ void process_commands()
 			if (code_seen('S'))
 			{
 				bed_width_correction = constrain(-code_value(), -15, 15);
+				updateParkingPos();
 				updateXMinMaxPos();
 			}
 			break;
@@ -1924,12 +1953,12 @@ void dumpstatus()
 #endif
 }
 
-void waitForTargetExtruderTemp()
+bool waitForTargetExtruderTemp()
 {
 	unsigned long codenum;
 	/* See if we are heating up or cooling down */
 	bool target_direction = isHeatingHotend(target_extruder); // true if heating, false if cooling
-
+	break_heating_wait = false;
 #ifdef TEMP_RESIDENCY_TIME
 	long residencyStart;
 	residencyStart = -1;
@@ -1943,7 +1972,8 @@ void waitForTargetExtruderTemp()
 	{
 #endif //TEMP_RESIDENCY_TIME
 		if ((millis() - codenum) > 1000UL)
-		{ //Print Temp Reading and remaining time every 1 second while heating up/cooling down
+		{ 			
+			//Print Temp Reading and remaining time every 1 second while heating up/cooling down
 			printTemperatures();
 #ifdef TEMP_RESIDENCY_TIME
 			SERIAL_PROTOCOLPGM(" W:");
@@ -1972,9 +2002,20 @@ void waitForTargetExtruderTemp()
 			residencyStart = millis();
 		}
 #endif //TEMP_RESIDENCY_TIME
+		
+		// Continue filling the command buffer, whilst checking for M108s
+		readCommand();
+		if (break_heating_wait)
+		{
+			break_heating_wait = false;
+
+			// By returning false, we prevent checking the other extruder in sync mode
+			return false;
+		}
 	}
 	starttime = millis();
 	previous_millis_cmd = millis();
+	return true;
 }
 
 #ifdef DUAL_X
@@ -1982,17 +2023,21 @@ void waitForTargetExtruderTemp()
 // offset:        distance between tools. Min: extruder_offset, Max: bed_width() - extruder_offset. Value 0
 //                will set the offset to half of the print area size
 // do_invert_x0:  true enables mirrored synchronous mode
-static void beginSyncMode(float offset, bool do_invert_x0)
+// temp_sync:	  heat t0 to t1 temperature target 
+static void beginSyncMode(float offset, bool do_invert_x0, bool temp_sync)
 {
 	// Check if temperatures are in sync, update if necessary
-	float current_left_temp_target = degTargetHotend(1);
-	if (current_left_temp_target != 0)
-		setTargetHotend(current_left_temp_target + temp_offset, 0);
-	else
-		setTargetHotend(0, 0);
-
+	if(temp_sync)
+	{
+		float current_left_temp_target = degTargetHotend(1);
+		if (current_left_temp_target != 0)
+			setTargetHotend(current_left_temp_target + temp_offset, 0);
+		else
+			setTargetHotend(0, 0);
+	}
 	// Correct offset 
 	// Limit offset to reasonable values. Use center for offset=0
+	// **Note: this is the offset, not the absolute position of tool0
 	if (offset < 0.01) // offset is a float, so compare with error margin
 		offset = (bed_width() - extruder_offset[X_AXIS][1]) / 2.0; // Move halfway !! Something weird happens here: adding scalars to arrays = bad
 	else if (offset < -extruder_offset[X_AXIS][1])
@@ -2013,9 +2058,6 @@ static void beginSyncMode(float offset, bool do_invert_x0)
 
 		// Enable/disable mirrormode
 		inverted_x0_mode = do_invert_x0;
-
-		// Move left and right in position
-		//homeDualX();
 	}
 }
 
@@ -2033,21 +2075,15 @@ static void endSyncMode()
 	}
 }
 
-// Sets the parking position of a tool
-// extruder: tool number
-// offset: offset from printing area; must be >= 0
-static void setParkingOffset(int extruder, float offset)
+// Updates the absolute parking positions (useful on startup and for calibration)
+static void updateParkingPos()
 {
-	// Limit offset to half bed size 
-	// offset = constrain(offset, 0, bed_width() / 2.0 + extruder_offset[X_AXIS][1] / 2.0); // Could cause some funny side effects - removed for now.
-
 	// 'Forget' the extruder may have been parked (to prevent toolswitch assuming wrong parking pos)
-	is_parked[extruder] = false;
+	is_parked[0] = false;
+	is_parked[1] = false;
 
-	if (extruder == 0)
-		parking_pos[extruder] = bed_width() - offset;
-	else if (extruder == 1)
-		parking_pos[extruder] = bed_width() + offset;
+	parking_pos[0] = base_min_pos(X_AXIS) + bed_width() - parking_offset;
+	parking_pos[1] = base_min_pos(X_AXIS) + parking_offset;
 }
 
 // Updates the software endstops based on the last known position of the other extruder
@@ -2058,7 +2094,7 @@ static void updateXMinMaxPos()
 	{
 		// Right tool
 		min_pos[X_AXIS] = last_known_x[1] - extruder_offset[X_AXIS][1];
-		max_pos[X_AXIS] = bed_width() + add_homeing[X_AXIS];
+		max_pos[X_AXIS] = base_min_pos(X_AXIS) + bed_width() + add_homeing[X_AXIS];
 	}
 	else
 	{
@@ -2105,7 +2141,7 @@ static void homeDualX()
 		{
 			// Bring right tool in position
 			feedrate = homing_feedrate[X_AXIS];
-			destination[X_AXIS] = actual_dual_x_offset;
+			destination[X_AXIS] = base_min_pos(X_AXIS) + actual_dual_x_offset; // Left is at base_min_pos here
 			line_to_destination();
 
 			// Wait for it

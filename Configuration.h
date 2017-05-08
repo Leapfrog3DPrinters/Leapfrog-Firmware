@@ -10,8 +10,10 @@
   //to THIS file by the user have been successfully uploaded into firmware.
   #define STRING_VERSION_CONFIG_H __DATE__ " " __TIME__ //Personal revision number for changes to THIS file.
   #define STRING_CONFIG_H_AUTHOR "Leapfrog 3D Printers" //Who made the changes.
-  #define LEAPFROG_FIRMWARE_VERSION "2.7HT"
+
   #define LEAPFROG_LMC_VERSION "LMC v2"
+  #define LEAPFROG_FIRMWARE_VERSION "2.7.1"
+
   #define LEAPFROG_MODEL "Bolt"
 
   // This determines the communication speed of the printer
