@@ -74,12 +74,13 @@
 
 	#define MSG_ERR_HEAD_PCB_HOTEND_COMBO "Head PCB not suitable for high temp hotend. Extruder: "
 	#define MSG_ERR_HEAD_PCB_OLD_NEW "Extruders have different head PCBs."
-    #define MSG_M115_EXTRUDER_T0 " T0"
-    #define MSG_M115_EXTRUDER_T1 " T1"
-    #define MSG_M115_PT100_DETECTED "sensor_type: PT-100"
-    #define MSG_M115_THERMISTOR_DETECTED "sensor_type: thermistor"
-    #define MSG_M115_HIGH_TEMP_DETECTED "hotend_type: high_temperature"
-    #define MSG_M115_LOW_TEMP_DETECTED "hotend_type: low_temperature"
+
+    #define MSG_M115_SENSOR_TYPE " SENSOR_TYPE_T" 
+	#define MSG_M115_SENSOR_TYPE_PT100 ":PT100"
+	#define MSG_M115_SENSOR_TYPE_THERMISTOR ":thermistor"
+	#define MSG_M115_HOTEND_TYPE " HOTEND_TYPE_T"
+	#define MSG_M115_HOTEND_TYPE_HIGH_TEMP ":ht"
+	#define MSG_M115_HOTEND_TYPE_LOW_TEMP ":lt"
     
 #endif
 #endif // ifndef LANGUAGE_H

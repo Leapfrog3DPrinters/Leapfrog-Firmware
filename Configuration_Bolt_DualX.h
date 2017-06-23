@@ -44,7 +44,8 @@
 const bool X0_ENDSTOPS_INVERTING = false; // set to true to invert the logic of the endstops.
 const bool X1_ENDSTOPS_INVERTING = false; // set to true to invert the logic of the endstops.
 const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of the endstops.
-const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of the endstops.
+const bool Z_MIN_ENDSTOP_INVERTING = true; // set to true to invert the logic of the endstops.
+const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstops.
 //#define DISABLE_MAX_ENDSTOPS
 
 // For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
@@ -84,7 +85,7 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define X_MIN_POS -37.0
 #define Y_MIN_POS -33.0  //0 original
 #define Z_MIN_POS 0.0
-#define X_MAX_POS 330.0     // 360.2 original
+#define X_MAX_POS 339.0     // 360.2 original
 #define Y_MAX_POS 322.0     //350 original; 5 mm removed for safety
 #define Z_MAX_POS 205.0
 

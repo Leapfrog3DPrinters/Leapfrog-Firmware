@@ -85,7 +85,7 @@ static bool old_y_max_endstop=false;
 static bool old_z_min_endstop=false;
 static bool old_z_max_endstop=false;
 
-static bool check_endstops = true;
+static bool check_endstops[3] = { true, true, true };
 
 static bool filament_status = true; // check initial state of filament sensor
 static bool init_status = true;
@@ -101,8 +101,7 @@ volatile signed char count_direction[NUM_AXIS] = { 1, 1, 1, 1};
 //=============================functions         ============================
 //===========================================================================
 
-#define CHECK_ENDSTOPS  if(check_endstops)
-//#define CHECK_ENDSTOPS if(false)
+#define CHECK_ENDSTOPS(LETTER)  if(check_endstops[LETTER##_AXIS])
 
 // intRes = intIn1 * intIn2 >> 16
 // uses:
@@ -300,9 +299,11 @@ void endstops_hit_on_purpose()
   endstop_z_hit=false;
 }
 
-void enable_endstops(bool check)
+void enable_endstops(bool x, bool y, bool z)
 {
-  check_endstops = check;
+  check_endstops[X_AXIS] = x;
+  check_endstops[Y_AXIS] = y;
+  check_endstops[Z_AXIS] = z;
 }
 
 //         __________________________
@@ -470,7 +471,7 @@ ISR(TIMER1_COMPA_vect)
     // Set direction en check limit switches
     //TODO: Maybe remove condition that endstops are only checked for active_extruder
     if ((out_bits & (1<<X_AXIS)) != 0) {   // stepping along -X axis
-      CHECK_ENDSTOPS
+      CHECK_ENDSTOPS(X)
       {
         #ifdef DUAL_X
           if(current_block->active_extruder == 0)
@@ -509,7 +510,7 @@ ISR(TIMER1_COMPA_vect)
       }
     }
     else { // +direction x-axis
-      CHECK_ENDSTOPS
+      CHECK_ENDSTOPS(X)
       {
         #ifdef DUAL_X
           if(current_block->active_extruder == 0)
@@ -550,7 +551,7 @@ ISR(TIMER1_COMPA_vect)
     }
 
     if ((out_bits & (1<<Y_AXIS)) != 0) {   // -direction y-axis
-      CHECK_ENDSTOPS
+      CHECK_ENDSTOPS(Y)
       {
         #if Y_MIN_PIN > -1
           bool y_min_endstop=(READ(Y_MIN_PIN) != Y_ENDSTOPS_INVERTING);
@@ -564,7 +565,7 @@ ISR(TIMER1_COMPA_vect)
       }
     }
     else { // +direction y-axis
-      CHECK_ENDSTOPS
+      CHECK_ENDSTOPS(Y)
       {
         #if Y_MAX_PIN > -1
           bool y_max_endstop=(READ(Y_MAX_PIN) != Y_ENDSTOPS_INVERTING);
@@ -580,10 +581,10 @@ ISR(TIMER1_COMPA_vect)
     if ((out_bits & (1<<Z_AXIS)) != 0) {   // -direction z-axis
       WRITE(Z_DIR_PIN,INVERT_Z_DIR);
       count_direction[Z_AXIS]=-1;
-      CHECK_ENDSTOPS
+      CHECK_ENDSTOPS(Z)
       {
         #if Z_MIN_PIN > -1
-          bool z_min_endstop=(READ(Z_MIN_PIN) != Z_ENDSTOPS_INVERTING);
+          bool z_min_endstop=(READ(Z_MIN_PIN) != Z_MIN_ENDSTOP_INVERTING);
           if(z_min_endstop && old_z_min_endstop && (current_block->steps_z > 0)) {
             endstops_trigsteps[Z_AXIS] = count_position[Z_AXIS];
             endstop_z_hit=true;
@@ -596,10 +597,10 @@ ISR(TIMER1_COMPA_vect)
     else { // +direction
       WRITE(Z_DIR_PIN,!INVERT_Z_DIR);
       count_direction[Z_AXIS]=1;
-      CHECK_ENDSTOPS
+      CHECK_ENDSTOPS(Z)
       {
         #if Z_MAX_PIN > -1
-          bool z_max_endstop=(READ(Z_MAX_PIN) != Z_ENDSTOPS_INVERTING);
+          bool z_max_endstop=(READ(Z_MAX_PIN) != Z_MAX_ENDSTOP_INVERTING);
           if(z_max_endstop && old_z_max_endstop && (current_block->steps_z > 0)) {
             endstops_trigsteps[Z_AXIS] = count_position[Z_AXIS];
             endstop_z_hit=true;
@@ -1015,7 +1016,7 @@ void st_init()
     TIMSK0 |= (1<<OCIE0A);
   #endif //ADVANCE
 
-  enable_endstops(true); // Start with endstops active. After homing they can be disabled
+  enable_endstops(true, true, true); // Start with endstops active. After homing they can be disabled
   sei();
 }
 

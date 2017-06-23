@@ -302,24 +302,20 @@ void setup_filament_pins()
 // Only call after setup_head_pcb_detect() has run
 static void print_head_hotend_type()
 {
-    // First extruder:
-    SERIAL_PROTOCOLPGM(MSG_M115_EXTRUDER_T0);
-    if (old_head_pcb[0]) { SERIAL_PROTOCOLPGM(MSG_M115_THERMISTOR_DETECTED); }
-    else { SERIAL_PROTOCOLPGM(MSG_M115_PT100_DETECTED); }
+	for (uint8_t e = 0; e < EXTRUDERS; e++)
+	{
+		SERIAL_PROTOCOLPGM(MSG_M115_SENSOR_TYPE);
+		SERIAL_PROTOCOL_F(e, 10);
 
-    SERIAL_PROTOCOLPGM(MSG_M115_EXTRUDER_T0);
-    if (low_temp_hotend[0]) { SERIAL_PROTOCOLPGM(MSG_M115_LOW_TEMP_DETECTED); }
-    else { SERIAL_PROTOCOLPGM(MSG_M115_HIGH_TEMP_DETECTED); }
+    	if (old_head_pcb[e]) { SERIAL_PROTOCOLPGM(MSG_M115_SENSOR_TYPE_THERMISTOR); }
+    	else { SERIAL_PROTOCOLPGM(MSG_M115_SENSOR_TYPE_PT100); }
 
-#if EXTRUDERS > 1
-    SERIAL_PROTOCOLPGM(MSG_M115_EXTRUDER_T1);
-    if (old_head_pcb[1]) { SERIAL_PROTOCOLPGM(MSG_M115_THERMISTOR_DETECTED); }
-    else { SERIAL_PROTOCOLPGM(MSG_M115_PT100_DETECTED); }
+		SERIAL_PROTOCOLPGM(MSG_M115_HOTEND_TYPE);
+		SERIAL_PROTOCOL_F(e, 10);
 
-    SERIAL_PROTOCOLPGM(MSG_M115_EXTRUDER_T1);
-    if (low_temp_hotend[1]) { SERIAL_PROTOCOLPGM(MSG_M115_LOW_TEMP_DETECTED); }
-    else { SERIAL_PROTOCOLPGM(MSG_M115_HIGH_TEMP_DETECTED); }
-#endif
+		if(low_temp_hotend[e]) { SERIAL_PROTOCOLPGM(MSG_M115_HOTEND_TYPE_LOW_TEMP); }
+		else { SERIAL_PROTOCOLPGM(MSG_M115_HOTEND_TYPE_HIGH_TEMP); }
+	}
 }
 
 
@@ -339,30 +335,36 @@ static void setup_head_pcb_detect()
 	// Determine the head PCB and hotend scenario (see pins.h):
 	old_head_pcb[0] = digitalRead(HEAD_PCB_OLD_0_PIN);			// HIGH iff old head PCB is connected (pulled high due to pull-up)
 	low_temp_hotend[0] = digitalRead(LOW_TEMP_HOTEND_0_PIN);	// HIGH iff a low temp hotend is connected
+
+	if(!low_temp_hotend[0]){ heater_0_maxtemp = HEATER_HIGH_TEMP_MAX; }
+
 #if EXTRUDERS > 1
 	old_head_pcb[1] = digitalRead(HEAD_PCB_OLD_1_PIN);			// HIGH iff old head PCB is connected (pulled high due to pull-up)
 	low_temp_hotend[1] = digitalRead(LOW_TEMP_HOTEND_1_PIN);	// HIGH iff a low temp hotend is connected	
+	if(!low_temp_hotend[1]){ heater_1_maxtemp = HEATER_HIGH_TEMP_MAX; }
 #endif
+
+
 
 	// Check for illegal hotends / head PCB combinations:
 	if (old_head_pcb[0] && !low_temp_hotend[0]) {
 		SERIAL_ERROR_START
 		SERIAL_ERRORPGM(MSG_ERR_HEAD_PCB_HOTEND_COMBO);
 		SERIAL_ERRORLN(0);
-		kill();
+		//kill();
 	}
 #if EXTRUDERS > 1
 	if (old_head_pcb[1] && !low_temp_hotend[1]) {
 		SERIAL_ERROR_START
 		SERIAL_ERRORPGM(MSG_ERR_HEAD_PCB_HOTEND_COMBO);
 		SERIAL_ERRORLN(1);
-		kill();
+		//kill();
 	}
 	if (old_head_pcb[0] ^ old_head_pcb[1]) {					// Combination of one old and one new head PCB
 		SERIAL_ERROR_START
 		SERIAL_ERRORPGM(MSG_ERR_HEAD_PCB_OLD_NEW);
 		SERIAL_ERRORLN(1);
-		kill();
+		//kill();
 	}
 #endif
 
@@ -802,7 +804,7 @@ void process_commands()
 			feedmultiply = 100;
 			previous_millis_cmd = millis();
 
-			enable_endstops(true);
+			enable_endstops(true, true, true);
 
 			set_destination_to_current();
 
@@ -853,10 +855,7 @@ void process_commands()
 
 			sync_plan_position();
 
-
-#ifdef ENDSTOPS_ONLY_FOR_HOMING
-			enable_endstops(false);
-#endif
+			enable_endstops(ENDSTOPS_DURING_PRINT_X, ENDSTOPS_DURING_PRINT_Y, ENDSTOPS_DURING_PRINT_Z);
 
 			feedrate = saved_feedrate;
 			feedmultiply = saved_feedmultiply;
@@ -980,7 +979,9 @@ void process_commands()
 #endif
 		}
 		break;
-	
+		case 198:
+			outputRaw();
+			break;
 		case 199:
 			//TODO: Remove this
 
@@ -1206,23 +1207,23 @@ void process_commands()
             // TODO: one JSON string?
 			SERIAL_ECHO_START;
 			SERIAL_PROTOCOLPGM(MSG_M115_REPORT);
-			SERIAL_PROTOCOLPGM(" EXTRUDER_COUNT:")
+			SERIAL_PROTOCOLPGM(" EXTRUDER_COUNT:");
 			SERIAL_PROTOCOL(EXTRUDERS);
 			SERIAL_PROTOCOLPGM(" EXTRUDER_OFFSET_X:");
 			SERIAL_PROTOCOL(-extruder_offset[X_AXIS][1]);
 			SERIAL_PROTOCOLPGM(" EXTRUDER_OFFSET_Y:");
 			SERIAL_PROTOCOL(-extruder_offset[Y_AXIS][1]);
 			SERIAL_PROTOCOLPGM(" BED_WIDTH_CORRECTION:");
-			SERIAL_PROTOCOLLN(-bed_width_correction);
+			SERIAL_PROTOCOL(-bed_width_correction);
 
             print_head_hotend_type();
             SERIAL_PROTOCOLLN("");
 			break;
 		case 120: // M120
-			enable_endstops(false);
+			enable_endstops(false, false, false);
 			break;
 		case 121: // M121
-			enable_endstops(true);
+			enable_endstops(true, true, true);
 			break;
 		case 119: // M119
 			SERIAL_PROTOCOLLN(MSG_M119_REPORT);
@@ -1254,11 +1255,11 @@ void process_commands()
 #endif
 #if (Z_MIN_PIN > -1)
 			SERIAL_PROTOCOLPGM(MSG_Z_MIN);
-			SERIAL_PROTOCOLLN(((READ(Z_MIN_PIN) ^ Z_ENDSTOPS_INVERTING) ? MSG_ENDSTOP_HIT : MSG_ENDSTOP_OPEN));
+			SERIAL_PROTOCOLLN(((READ(Z_MIN_PIN) ^ Z_MIN_ENDSTOP_INVERTING) ? MSG_ENDSTOP_HIT : MSG_ENDSTOP_OPEN));
 #endif
 #if (Z_MAX_PIN > -1)
 			SERIAL_PROTOCOLPGM(MSG_Z_MAX);
-			SERIAL_PROTOCOLLN(((READ(Z_MAX_PIN) ^ Z_ENDSTOPS_INVERTING) ? MSG_ENDSTOP_HIT : MSG_ENDSTOP_OPEN));
+			SERIAL_PROTOCOLLN(((READ(Z_MAX_PIN) ^ Z_MAX_ENDSTOP_INVERTING) ? MSG_ENDSTOP_HIT : MSG_ENDSTOP_OPEN));
 #endif
 			break;
 			//TODO: update for all axis, use for loop
@@ -1493,7 +1494,7 @@ void process_commands()
 				feedmultiply = 100;
 				yoffset = extruder_offset[Y_AXIS][tmp_extruder] - extruder_offset[Y_AXIS][active_extruder];
 
-				enable_endstops(true);
+				enable_endstops(true, true, true);
 
 				set_destination_to_current();
 
@@ -1533,9 +1534,7 @@ void process_commands()
 				current_position[Y_AXIS] += yoffset;
 				sync_plan_position();
 
-#ifdef ENDSTOPS_ONLY_FOR_HOMING
-				enable_endstops(false);
-#endif
+				enable_endstops(ENDSTOPS_DURING_PRINT_X, ENDSTOPS_DURING_PRINT_Y, ENDSTOPS_DURING_PRINT_Z);
 
 				feedrate = saved_feedrate;
 				feedmultiply = saved_feedmultiply;
@@ -1879,10 +1878,37 @@ void printTemperatures()
 #endif
 }
 
+void outputRaw()
+{
+	long codenum = millis();
+	
+	int read = 0;
+
+	while (read < 10)
+	{
+		if ((millis() - codenum) > 1000) //Print Temp Reading every 1 second while heating up.
+		{
+			SERIAL_ECHOLN(degHotendRaw(0));
+			++read;
+			codenum = millis();
+		}
+		manage_heater();
+		manage_inactivity();
+	}
+
+	previous_millis_cmd = millis();
+}
+
 void dumpstatus()
 {
 	SERIAL_ECHO("t: ");
 	SERIAL_ECHOLN(millis());
+
+	SERIAL_ECHO("T0 raw:");
+	SERIAL_ECHOLN(degHotendRaw(0));
+
+	SERIAL_ECHO("T1 raw:");
+	SERIAL_ECHOLN(degHotendRaw(1));
 
 	SERIAL_ECHO("Sync mode: ");
 	SERIAL_ECHOLN(syncmode_enabled);

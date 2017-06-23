@@ -2,10 +2,11 @@
 
 Changes to Leapfrog-Firmware
 
-## 2.7HT
+## 2.8
 
 - Added detection and support for high temperature hotend
 - Support for PT-100 temperature sensor
+- Support for Z-max endstop
 
 ###Config changes
 | Name | Old | New | Comment

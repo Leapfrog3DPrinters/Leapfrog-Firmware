@@ -75,8 +75,8 @@ int current_raw_bed = 0;
 #endif //PIDTEMP
 
 
-int heater_0_maxtemp = HEATER_0_MAXTEMP;
-int heater_1_maxtemp = HEATER_1_MAXTEMP;
+int heater_0_maxtemp = HEATER_LOW_TEMP_MAX;
+int heater_1_maxtemp = HEATER_LOW_TEMP_MAX;
 float heater_0_offset;
 float heater_1_offset;
 
@@ -760,15 +760,15 @@ void manage_heater()
 
 
 #define PGM_RD_W(x)   (short)pgm_read_word(&x)
-#define PGM_RD_W2(x)   (uint16_t)pgm_read_word(&x)
+#define PGM_RD_W2(x)   (short)pgm_read_word(&x)
 // Takes hot end temperature value as input and returns corresponding raw value. 
 // For a thermistor, it uses the RepRap thermistor temp table.
 // This is needed because PID in hydra firmware hovers around a given analog value, not a temp value.
 // This function is derived from inversing the logic from a portion of getTemperature() in FiveD RepRap firmware.
 // TODO: celsius is an int: why not specified as float (same as analog2temp)
 int temp2analog(int celsius, uint8_t e) {
-    /*SERIAL_ECHO("temp2analog:");
-    SERIAL_ECHOLN(celsius);*/
+    // SERIAL_ECHO("temp2analog:");
+    // SERIAL_ECHOLN(old_head_pcb[1]);
     if (e >= EXTRUDERS) {
         SERIAL_ERROR_START;
         SERIAL_ERROR((int)e);
@@ -791,20 +791,26 @@ int temp2analog(int celsius, uint8_t e) {
 
     if (!old_head_pcb[e]) {
         // New head PCB with PT-100 detected:
-
-        for (i = 1; i < temptable_pt100_len; i++) {
-            if (PGM_RD_W2(temptable_pt100[i][1]) > celsius) {   // Table entries increase monotonic
-                // Interpolate between i-1 and i'th entry:
-                raw = PGM_RD_W2(temptable_pt100[i - 1][0]) +
-                    (celsius - PGM_RD_W2(temptable_pt100[i - 1][1])) *
-                    (PGM_RD_W2(temptable_pt100[i][0]) - PGM_RD_W2(temptable_pt100[i - 1][0])) /
-                    (PGM_RD_W2(temptable_pt100[i][1]) - PGM_RD_W2(temptable_pt100[i - 1][1]));
-                break;
-            }
+        if (celsius <= temptable_pt100[0][1])
+        {
+          raw = temptable_pt100[0][0];
         }
+        else
+        {
+          for (i = 1; i < temptable_pt100_len; i++) {
+              if (PGM_RD_W(temptable_pt100[i][1]) > celsius) {   // Table entries increase monotonic
+                  // Interpolate between i-1 and i'th entry:
+                  raw = PGM_RD_W(temptable_pt100[i - 1][0]) +
+                      (celsius - PGM_RD_W(temptable_pt100[i - 1][1])) *
+                      (PGM_RD_W(temptable_pt100[i][0]) - PGM_RD_W(temptable_pt100[i - 1][0])) /
+                      (PGM_RD_W(temptable_pt100[i][1]) - PGM_RD_W(temptable_pt100[i - 1][1]));
+                  break;
+              }
+          }
 
-        // If celsius is bigger than the biggest table entry, return biggest raw entry:
-        if (i == temptable_pt100_len) { raw = PGM_RD_W2(temptable_pt100[i - 1][0]); }
+          // If celsius is bigger than the biggest table entry, return biggest raw entry:
+          if (i == temptable_pt100_len) { raw = PGM_RD_W(temptable_pt100[i - 1][0]); }
+        }
         return raw;
     }
     else {
@@ -870,8 +876,9 @@ int temp2analogBed(int celsius) {
 // Derived from RepRap FiveD extruder::getTemperature()
 // For hot end temperature measurement.
 float analog2temp(int raw, uint8_t e) {
-    /*SERIAL_ECHO("analog2temp:");
-    SERIAL_ECHOLN(raw);*/
+    // SERIAL_ECHO("analog2temp:");
+    // SERIAL_ECHOLN(old_head_pcb[1]);
+
     if (e >= EXTRUDERS) {
         SERIAL_ERROR_START;
         SERIAL_ERROR((int)e);
@@ -895,22 +902,43 @@ float analog2temp(int raw, uint8_t e) {
 
     if (!old_head_pcb[e]) {
         // New head PCB with PT-100 detected
-        uint16_t raw_u = (uint16_t) raw;    // Should be safe as ADC = 10 bit unsigned
+        //short raw_u = (short) raw;    // Should be safe as ADC = 10 bit unsigned
 
-        for (i = 1; i < temptable_pt100_len; i++) {
-            if (PGM_RD_W2(temptable_pt100[i][0]) > raw_u) {
-                // Linear interpolate between i-1 and i:
-                celsius = PGM_RD_W2(temptable_pt100[i - 1][1]) +
-                    (raw_u - PGM_RD_W2(temptable_pt100[i - 1][0])) *
-                    (float)(PGM_RD_W2(temptable_pt100[i][1] - temptable_pt100[i - 1][1])) /
-                    (float)(PGM_RD_W2(temptable_pt100[i][0] - temptable_pt100[i - 1][0]));
-                break;
-            }
+        if (raw < temptable_pt100[0][0])
+        {
+          celsius = (float)temptable_pt100[0][1];
         }
+        else
+        {
+          for (i = 1; i < temptable_pt100_len; i++) {
+              if (PGM_RD_W(temptable_pt100[i][0]) > raw) {
+                  // Linear interpolate between i-1 and i:
+                  // SERIAL_ECHO("analog2temp (t");
+                  // SERIAL_ECHO(e);
+                  // SERIAL_ECHO(" raw:");
+                  // SERIAL_ECHO(raw);
+                  // SERIAL_ECHO(") a:");
+                  // SERIAL_ECHO(PGM_RD_W(temptable_pt100[i - 1][1]));
+                  // SERIAL_ECHO(" b:");
+                  // SERIAL_ECHO(raw - temptable_pt100[i - 1][0]);
+                  // SERIAL_ECHO(" c1:");
+                  // SERIAL_ECHO((float)(PGM_RD_W(temptable_pt100[i][1] - temptable_pt100[i - 1][1])));
+                  // SERIAL_ECHO(" c2:");
+                  // SERIAL_ECHO((float)(PGM_RD_W(temptable_pt100[i][0] - temptable_pt100[i - 1][0])));
+                  // SERIAL_ECHO(" celsius: ");
 
-        // If raw is still bigger than the last entry in the table, return the last value:
-        if (i == temptable_pt100_len) { celsius = PGM_RD_W2(temptable_pt100[i - 1][1]); }
+                  celsius = PGM_RD_W(temptable_pt100[i - 1][1]) +
+                      (raw - PGM_RD_W(temptable_pt100[i - 1][0])) *
+                      (float)(PGM_RD_W(temptable_pt100[i][1]) - PGM_RD_W(temptable_pt100[i - 1][1])) /
+                      (float)(PGM_RD_W(temptable_pt100[i][0]) - PGM_RD_W(temptable_pt100[i - 1][0]));
 
+                  break;
+              }
+          }
+
+          // If raw is still bigger than the last entry in the table, return the last value:
+          if (i == temptable_pt100_len) { celsius = PGM_RD_W(temptable_pt100[i - 1][1]); }
+        }
         return celsius;
     }
     else {
@@ -1402,8 +1430,9 @@ ISR(TIMER0_COMPB_vect)
 //      break;
   }
   
-    if(temp_count >= 16) {  // 8 ms * 16 = 128ms.
+    if(temp_count >= OVERSAMPLENR) {  // 8 ms * 16 = 128ms.
 #if defined(HEATER_0_USES_AD595) || defined(HEATER_0_USES_MAX6675) || defined(HEATER_0_USES_DETECTION)
+        //SERIAL_ECHOLN(raw_temp_0_value);
         if (old_head_pcb[0]) { current_raw[0] = 16383 - raw_temp_0_value; }     // For thermistor
         else { current_raw[0] = raw_temp_0_value; }     // Use uninverted ADC value for PT100
 #else
@@ -1412,8 +1441,9 @@ ISR(TIMER0_COMPB_vect)
 
 #if EXTRUDERS > 1    
 #if defined(HEATER_1_USES_AD595) || defined(HEATER_1_USES_DETECTION)
-        if (old_head_pcb[1]) { current_raw[1] = 16383 - raw_temp_0_value; }     // For thermistor
-        else { current_raw[1] = raw_temp_0_value; }     // Use uninverted ADC value for PT100
+        //SERIAL_ECHOLN(raw_temp_1_value);
+        if (old_head_pcb[1]) { current_raw[1] = 16383 - raw_temp_1_value; }     // For thermistor
+        else { current_raw[1] = raw_temp_1_value; }     // Use uninverted ADC value for PT100
 #else
         current_raw[1] = 16383 - raw_temp_1_value;
 #endif

@@ -46,7 +46,7 @@
 #define Z_DIR_PIN          32 // A6
 #define Z_ENABLE_PIN       30 // A1
 #define Z_MIN_PIN          49 // fixed for HS from 44
-#define Z_MAX_PIN          -1
+#define Z_MAX_PIN          46
 
 #define E0_STEP_PIN        34  //34
 #define E0_DIR_PIN         35 //35

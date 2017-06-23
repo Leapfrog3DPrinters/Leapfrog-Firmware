@@ -66,8 +66,9 @@
 //=============================Mechanical Settings===========================
 //===========================================================================
 
-//14-6-2016: TODO: Disable this and ensure safe moves!
-#define ENDSTOPS_ONLY_FOR_HOMING // If defined the endstops will only be used for homing
+#define ENDSTOPS_DURING_PRINT_X false // If false the endstops will only be used when homing X, not moving in x
+#define ENDSTOPS_DURING_PRINT_Y false // If false the endstops will only be used when homing Y, not moving in y
+#define ENDSTOPS_DURING_PRINT_Z true // If false the endstops will only be used when homing Y, not moving in y
 
 //#define Z_LATE_ENABLE // Enable Z the last moment. Needed if your Z driver overheats.
 
@@ -178,16 +179,6 @@ const int dropsegments=5; //everything with less than this number of steps will 
 #endif
 #if TEMP_SENSOR_0 == -2
   #define HEATER_0_USES_MAX6675
-#endif
-
-#if TEMP_SENSOR_0 == -3
-  #define HEATER_0_USES_DETECTION
-#endif
-#if TEMP_SENSOR_1 == -3
-  #define HEATER_1_USES_DETECTION
-#endif
-#if TEMP_SENSOR_2 == -3
-  #define HEATER_2_USES_DETECTION
 #endif
 
 #if TEMP_SENSOR_0 == 0

@@ -83,6 +83,10 @@ FORCE_INLINE float degHotend(uint8_t extruder) {
   return analog2temp(current_raw[extruder], extruder);
 };
 
+FORCE_INLINE int degHotendRaw(uint8_t extruder) {  
+  return current_raw[extruder];
+};
+
 FORCE_INLINE float degBed() {
   return analog2tempBed(current_raw_bed);
 };

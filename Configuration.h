@@ -12,9 +12,9 @@
   #define STRING_CONFIG_H_AUTHOR "Leapfrog 3D Printers" //Who made the changes.
 
   #define LEAPFROG_LMC_VERSION "LMC v2"
-  #define LEAPFROG_FIRMWARE_VERSION "2.7.1"
+  #define LEAPFROG_FIRMWARE_VERSION "2.8"
 
-  #define LEAPFROG_MODEL "Bolt"
+  #define LEAPFROG_MODEL "BoltPro"
 
   // This determines the communication speed of the printer
   #define BAUDRATE 250000
@@ -29,13 +29,17 @@
   //===========================================================================
   //
   // 1 is 100k thermistor - best choice for EPCOS 100k (4.7k pullup)
-  // 60 is 100k Thermistor with adapted tabel by Erik Heidstra
-  // -3 is PT100 sensor with adapted tabel by Maurits Hartman
-  #define TEMP_SENSOR_0 -3      // Use detection mechanism: PT-100 / thermistor
-  #define TEMP_SENSOR_1 -3      // Use detection mechanism: PT-100 / thermistor
+  // 60 is 100k Thermistor with adapted table by Erik Heidstra
+
+  #define TEMP_SENSOR_0 1      // Use detection mechanism: PT-100 / thermistor
+  #define TEMP_SENSOR_1 1      // Use detection mechanism: PT-100 / thermistor
   #define TEMP_SENSOR_2 0
   #define TEMP_SENSOR_BED 1
   // #define USE_RTD             // Define when using RTD instead of thermistor
+  
+  // If defined, use PT100 sensor with adapted table by Maurits Hartman (if it is detected)
+  #define HEATER_0_USES_DETECTION
+  #define HEATER_1_USES_DETECTION
 
   // Actual temperature must be close to target for this long before M109 returns success
   #define TEMP_RESIDENCY_TIME 10	// (seconds)
@@ -62,10 +66,9 @@
   // This feature exists to protect your hotend from overheating accidentally, but *NOT* from thermistor short/failure!
   // You should use MINTEMP for thermistor short/failure protection.
   // TODO: variable MAXTEMP based on high and low temp hotends?
-  #define HEATER_0_MAXTEMP 350
-  #define HEATER_1_MAXTEMP 320
-  #define HEATER_2_MAXTEMP 320
-  #define BED_MAXTEMP 140
+  #define HEATER_LOW_TEMP_MAX 275
+  #define HEATER_HIGH_TEMP_MAX 360
+  #define BED_MAXTEMP 90
 
   #define USE_BED_PWM
 
