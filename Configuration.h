@@ -14,7 +14,7 @@
   #define LEAPFROG_LMC_VERSION "LMC v2"
   #define LEAPFROG_FIRMWARE_VERSION "2.8"
 
-  #define LEAPFROG_MODEL "BoltPro"
+  #define LEAPFROG_MODEL "Bolt"
 
   // This determines the communication speed of the printer
   #define BAUDRATE 250000
