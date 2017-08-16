@@ -119,14 +119,14 @@ static unsigned long  previous_millis_bed_heater;
 
 // Init min and max temp with extreme values to prevent false errors during startup
 #ifdef USE_RTD
-  static int minttemp[EXTRUDERS] = { 16383 };   // 2^14 - 1. TODO: check if this also initalizes all members of minttemp
+  static int minttemp[EXTRUDERS] = { 15800 };   // 2^14 - 1. TODO: check if this also initalizes all members of minttemp
   static int maxttemp[EXTRUDERS] = { 0 };       // the first value used for all
 #else
   static int minttemp[EXTRUDERS] = { 0 };
-  static int maxttemp[EXTRUDERS] = { 16383 };   // the first value used for all
+  static int maxttemp[EXTRUDERS] = { 15800 };   // the first value used for all
 #endif
   static int bed_minttemp = 0;
-  static int bed_maxttemp = 16383;
+  static int bed_maxttemp = 15800;
   static void *heater_ttbl_map[EXTRUDERS] = { (void *)heater_0_temptable
 #if EXTRUDERS > 1
                                             , (void *)heater_1_temptable
