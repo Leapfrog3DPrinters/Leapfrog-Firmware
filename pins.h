@@ -23,9 +23,9 @@
 #endif
 // Only for dual config: Left extruder
 #ifdef DUAL_X
-	#define X1_STEP_PIN         65
-	#define X1_DIR_PIN          64
-	#define X1_ENABLE_PIN       66
+	#define X1_STEP_PIN         14 //65
+	#define X1_DIR_PIN          15 //64
+	#define X1_ENABLE_PIN       39 //66
 	#define X1_MIN_PIN          47
 	#define X1_MAX_PIN          -1   //2 //Max endstops default to disabled "-1", set to commented value to enable.
 #else
@@ -36,9 +36,9 @@
 	#define X1_MAX_PIN          -1   //2 //Max endstops default to disabled "-1", set to commented value to enable.
 #endif
 
-#define Y_STEP_PIN         14 // A6
-#define Y_DIR_PIN          15 // A0
-#define Y_ENABLE_PIN       39
+#define Y_STEP_PIN         65 // A6 14
+#define Y_DIR_PIN          64 // A0 15
+#define Y_ENABLE_PIN       66 // 39
 #define Y_MIN_PIN          -1    //48
 #define Y_MAX_PIN          48   //15  
 
@@ -48,7 +48,7 @@
 #define Z_MIN_PIN          49 // fixed for HS from 44
 #define Z_MAX_PIN          46
 
-#define E0_STEP_PIN        34  //34
+#define E0_STEP_PIN        34 //34
 #define E0_DIR_PIN         35 //35
 #define E0_ENABLE_PIN      33 //33
 
