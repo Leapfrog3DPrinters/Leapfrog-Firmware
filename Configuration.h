@@ -11,8 +11,8 @@
   #define STRING_VERSION_CONFIG_H __DATE__ " " __TIME__ //Personal revision number for changes to THIS file.
   #define STRING_CONFIG_H_AUTHOR "Leapfrog 3D Printers" //Who made the changes.
 
-  #define LEAPFROG_LMC_VERSION "LMC v2"
-  #define LEAPFROG_FIRMWARE_VERSION "2.8.2"
+  #define LEAPFROG_LMC_VERSION "LMC v3"
+  #define LEAPFROG_FIRMWARE_VERSION "3.0.0"
 
   #define LEAPFROG_MODEL "BoltPro"
 
