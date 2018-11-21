@@ -23,10 +23,10 @@
 #endif
 // Only for dual config: Left extruder
 #ifdef DUAL_X
-	#define X1_STEP_PIN         65
-	#define X1_DIR_PIN          64
-	#define X1_ENABLE_PIN       66
-	#define X1_MIN_PIN          47
+	#define X1_STEP_PIN         65   //65
+	#define X1_DIR_PIN          64   //64
+	#define X1_ENABLE_PIN       66   //66
+	#define X1_MIN_PIN          47   //47
 	#define X1_MAX_PIN          -1   //2 //Max endstops default to disabled "-1", set to commented value to enable.
 #else
 	#define X1_STEP_PIN         -1
@@ -35,6 +35,8 @@
 	#define X1_MIN_PIN          -1
 	#define X1_MAX_PIN          -1   //2 //Max endstops default to disabled "-1", set to commented value to enable.
 #endif
+
+
 
 #define Y_STEP_PIN         14 // A6
 #define Y_DIR_PIN          15 // A0
@@ -48,16 +50,30 @@
 #define Z_MIN_PIN          49 // fixed for HS from 44
 #define Z_MAX_PIN          -1
 
-#define E0_STEP_PIN        34  //34
+#ifdef ENABLE_ZPROBE
+        //all Z motors use pin 30 as enable
+        //ROT2
+	#define Z2_STEP_PIN         4
+	#define Z2_DIR_PIN          5
+        //PWM OUT 
+	#define Z3_STEP_PIN         42
+	#define Z3_DIR_PIN          19
+
+	#define PIEZO_PIN           44
+#endif
+	
+//EMOT
+#define E0_STEP_PIN        34 //34
 #define E0_DIR_PIN         35 //35
 #define E0_ENABLE_PIN      33 //33
 
+//EMOT2
 #define E1_STEP_PIN        37 //37
 #define E1_DIR_PIN         40 //40
 #define E1_ENABLE_PIN      36 //36
 
-#define FILAMENT_E0         44 // 3RD pin in connector
-#define FILAMENT_E1         42 // 3RD pin in connector
+//#define FILAMENT_E0         44 // 3RD pin in connector
+//#define FILAMENT_E1         42 // 3RD pin in connector
 #define DOOR_PIN            -1
 
 #define LED_PIN            13

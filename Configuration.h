@@ -155,6 +155,29 @@
   // Increase the FAN pwm frequency. Removes the PWM noise but increases heating in the FET/Arduino
   #define FAST_PWM_FAN
 
+  ///////////////////////
+  // Auto bed leveling //
+  ///////////////////////
+  #define ENABLE_ZPROBE
+  #ifdef ENABLE_ZPROBE
+  #include "math3d.h"
+  
+  //16 probing coordinates
+  static float ZP_COORDS[16][3] =
+  { 
+    {-37.0, -33.0, 0.0}, {85.3, -33.0, 0.0}, {207.7, -33.0, 0.0}, {330.0, -33.0, 0.0},
+    {-37.0,  85.3, 0.0}, {85.3,  85.3, 0.0}, {207.7,  85.3, 0.0}, {330.0,  85.3, 0.0},
+    {-37.0, 203.7, 0.0}, {85.3, 203.7, 0.0}, {207.7, 203.7, 0.0}, {330.0, 203.7, 0.0},
+    {-37.0, 322.0, 0.0}, {85.3, 322.0, 0.0}, {207.7, 322.0, 0.0}, {330.0, 322.0, 0.0}
+  };
+ 
+  static Vector3d xbasis(1,0,0);
+  static Vector3d ybasis(0,1,0);
+  static Vector3d zbasis(0,0,1);
+ 
+  #endif
+  
+  //#include "Configuration_Bolt_Single.h"
   #include "Configuration_Bolt_DualX.h"
   #include "Configuration_adv.h"
   #include "thermistortables.h"
