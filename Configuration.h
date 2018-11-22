@@ -67,7 +67,7 @@
   // You should use MINTEMP for thermistor short/failure protection.
   // TODO: variable MAXTEMP based on high and low temp hotends?
   #define HEATER_LOW_TEMP_MAX 275
-  #define HEATER_HIGH_TEMP_MAX 400
+  #define HEATER_HIGH_TEMP_MAX 435 //400
   #define BED_MAXTEMP 100
 
   #define USE_BED_PWM

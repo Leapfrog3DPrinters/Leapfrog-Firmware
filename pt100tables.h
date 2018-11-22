@@ -76,7 +76,7 @@ const short temptable_pt100[][2] PROGMEM = {
 { OVERSAMPLENR * 848, 315 },
 { OVERSAMPLENR * 854, 320 },
 { OVERSAMPLENR * 861, 325 },
-{ OVERSAMPLENR * 868, 330 },
+{ OVERSAMPLENR * 868, 330 }, 
 { OVERSAMPLENR * 874, 335 },
 { OVERSAMPLENR * 881, 340 },
 { OVERSAMPLENR * 887, 345 },
@@ -90,8 +90,15 @@ const short temptable_pt100[][2] PROGMEM = {
 { OVERSAMPLENR * 939, 385 },
 { OVERSAMPLENR * 945, 390 },
 { OVERSAMPLENR * 951, 395 },
-{ OVERSAMPLENR * 958, 400 }
-
+{ OVERSAMPLENR * 958, 400 },
+//Extra high temps
+{ OVERSAMPLENR * 964, 405 },
+{ OVERSAMPLENR * 971, 410 },
+{ OVERSAMPLENR * 977, 415 },
+{ OVERSAMPLENR * 984, 420 },
+{ OVERSAMPLENR * 990, 425 },
+{ OVERSAMPLENR * 997, 430 },
+{ OVERSAMPLENR * 1003, 435 }
 };
 #define temptable_pt100_len (sizeof(temptable_pt100) / sizeof(temptable_pt100[0]))
 #endif
