@@ -1042,8 +1042,41 @@ void st_init()
     if(!Y_ENABLE_ON) WRITE(Y_ENABLE_PIN,HIGH);
   #endif
   //Z_Min_pin bij stepper init? Printer werkt prima maar klopt dit wel?
-  #if Z_MIN_PIN > -1
-    SET_INPUT(Z_MIN_PIN); 
+  //edited
+  /*#if Z_MIN_PIN > -1
+    SET_INPUT(Z_MIN_PIN);*/
+    
+  #if (Z_STEP_PIN > -1)
+    
+    if(Z_STEPPER_SINGLE == 0){
+      SET_OUTPUT(Z_STEP_PIN);
+      WRITE(Z_STEP_PIN,INVERT_Z_STEP_PIN);
+      //if(!Z_ENABLE_ON) WRITE(Z_ENABLE_PIN,HIGH);
+      SET_OUTPUT(Z2_STEP_PIN);
+      WRITE(Z2_STEP_PIN,INVERT_Z_STEP_PIN);
+      //if(!Z_ENABLE_ON) WRITE(Z_ENABLE_PIN,HIGH);
+      SET_OUTPUT(Z3_STEP_PIN);
+      WRITE(Z3_STEP_PIN,INVERT_Z_STEP_PIN);
+      if(!Z_ENABLE_ON) WRITE(Z_ENABLE_PIN,HIGH);
+    }
+
+    if(Z_STEPPER_SINGLE == 1){
+      SET_OUTPUT(Z_STEP_PIN);
+      WRITE(Z_STEP_PIN,INVERT_Z_STEP_PIN);
+      if(!Z_ENABLE_ON) WRITE(Z_ENABLE_PIN,HIGH);
+    }
+
+    if(Z_STEPPER_SINGLE == 2){
+      SET_OUTPUT(Z2_STEP_PIN);
+      WRITE(Z2_STEP_PIN,INVERT_Z_STEP_PIN);
+      if(!Z_ENABLE_ON) WRITE(Z_ENABLE_PIN,HIGH);
+    }
+
+    if(Z_STEPPER_SINGLE == 3){
+      SET_OUTPUT(Z3_STEP_PIN);
+      WRITE(Z3_STEP_PIN,INVERT_Z_STEP_PIN);
+      if(!Z_ENABLE_ON) WRITE(Z_ENABLE_PIN,HIGH);
+    }
     #ifdef ENDSTOPPULLUP_ZMIN
       WRITE(Z_MIN_PIN,HIGH);
     #endif

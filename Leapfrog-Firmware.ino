@@ -795,6 +795,7 @@ void process_commands()
   bool relative_mode_backup;
   float maxAdjust;
   int probeIterations;
+  SERIAL_PROTOCOLLN((int)code_value);
   if (code_seen('G'))
   {
     switch ((int)code_value())
@@ -891,6 +892,7 @@ void process_commands()
           endstops_hit_on_purpose(); // clear endstop hit flags
           break;
         }
+#ifdef ENABLE_ZPROBE
       case 32: // G32 - Z Probe at 16 points, straighten bed
         {
           relative_mode_backup = relative_mode; // Relative mode might be changed by probing algorithm. So store it, to be restored at the end
@@ -964,6 +966,27 @@ void process_commands()
           endstops_hit_on_purpose(); // clear endstop hit flags
           break;
         }
+#endif
+      case 33: //G33 all Z-motors
+        Z_STEPPER_SINGLE = 0;
+        //SERIAL_PROTOCOLPGM("3 spindles active");
+        break; 
+      case 34: // G34 back Z-motor
+        Z_STEPPER_SINGLE = 1;
+        //SERIAL_PROTOCOLPGM("back spindle active");
+        SERIAL_PROTOCOLLN(Z_STEPPER_SINGLE);
+        break;
+      case 35: // G35 right
+        Z_STEPPER_SINGLE = 2;
+        //SERIAL_PROTOCOLPGM("right spindle active");
+        SERIAL_PROTOCOLLN(Z_STEPPER_SINGLE);
+
+        break;
+      case 36: // G36 left
+        Z_STEPPER_SINGLE = 3;
+        //SERIAL_PROTOCOLPGM("left spindle active");
+        SERIAL_PROTOCOLLN(Z_STEPPER_SINGLE); 
+        break;
       case 90: // G90
         relative_mode = false;
         break;
@@ -1911,11 +1934,11 @@ float zprobe(const float& x, const float& y, const float& z){
   }
   st_synchronize();
   
-  while(digitalRead(PIEZO_PIN)){
+  while(READ(PIEZO_PIN)){
     destination[Z_AXIS] -= 0.1;
     plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], 8, active_extruder);
-    SERIAL_PROTOCOLPGM("Piezovalue: ");
-    SERIAL_PROTOCOLLN(PIEZO_PIN);
+    //SERIAL_PROTOCOLPGM("Piezovalue: ");
+    //SERIAL_PROTOCOLLN(PIEZO_PIN);
     st_synchronize();
   }
   rz = float (st_get_position(Z_AXIS))/axis_steps_per_unit[Z_AXIS];
@@ -1949,12 +1972,12 @@ float zprobe(const float& x, const float& y, const float& z){
 }
 
 //Check ZAdjust functions
-/*void ZAdjust1(float Distance)
+void ZAdjust1(float distance)
 {
   Z_STEPPER_SINGLE=4;//disable any move
   WRITE(Z_ENABLE_PIN,LOW);
-  int steps=abs(Distance)*axis_steps_per_unit[Z_AXIS];//steps/mm
-  if (Distance<0) WRITE(Z_DIR_PIN,INVERT_Z_DIR); else WRITE(Z_DIR_PIN,!INVERT_Z_DIR);
+  int steps=abs(distance)*axis_steps_per_unit[Z_AXIS];//steps/mm
+  if (distance<0) WRITE(Z_DIR_PIN,INVERT_Z_DIR); else WRITE(Z_DIR_PIN,!INVERT_Z_DIR);
   for(;steps--;steps>0)
   {
     WRITE(Z_STEP_PIN, !INVERT_Z_STEP_PIN);
@@ -1965,12 +1988,12 @@ float zprobe(const float& x, const float& y, const float& z){
   Z_STEPPER_SINGLE=0;//normal moves
 }
 
-void ZAdjust2(float Distance)
+void ZAdjust2(float distance)
 {
   Z_STEPPER_SINGLE=4;//disable any move
-  WRITE(Z2_ENABLE_PIN,LOW);
-  int steps=abs(Distance)*axis_steps_per_unit[Z_AXIS];//steps/mm
-  if (Distance<0) WRITE(Z2_DIR_PIN,INVERT_Z_DIR); else WRITE(Z2_DIR_PIN,!INVERT_Z_DIR);
+  WRITE(Z_ENABLE_PIN,LOW);
+  int steps=abs(distance)*axis_steps_per_unit[Z_AXIS];//steps/mm
+  if (distance<0) WRITE(Z2_DIR_PIN,INVERT_Z_DIR); else WRITE(Z2_DIR_PIN,!INVERT_Z_DIR);
   for(;steps--;steps>0)
   {
     WRITE(Z2_STEP_PIN, !INVERT_Z_STEP_PIN);
@@ -1981,12 +2004,12 @@ void ZAdjust2(float Distance)
   Z_STEPPER_SINGLE=0;//normal moves
 }
 
-void ZAdjust3(float Distance)
+void ZAdjust3(float distance)
 {
   Z_STEPPER_SINGLE=4;//disable any move
-  WRITE(Z3_ENABLE_PIN,LOW);
-  int steps=abs(Distance)*axis_steps_per_unit[Z_AXIS];//steps/mm
-  if (Distance<0) WRITE(Z3_DIR_PIN,INVERT_Z_DIR); else WRITE(Z3_DIR_PIN,!INVERT_Z_DIR);
+  WRITE(Z_ENABLE_PIN,LOW);
+  int steps=abs(distance)*axis_steps_per_unit[Z_AXIS];//steps/mm
+  if (distance<0) WRITE(Z3_DIR_PIN,INVERT_Z_DIR); else WRITE(Z3_DIR_PIN,!INVERT_Z_DIR);
   for(;steps--;steps>0)
   {
     WRITE(Z3_STEP_PIN, !INVERT_Z_STEP_PIN);
@@ -1995,19 +2018,17 @@ void ZAdjust3(float Distance)
     delay(1);
   }
   Z_STEPPER_SINGLE=0;//normal moves
-}*/
+}
 
 float zprobe_piezo16(){
   float originalX = current_position[X_AXIS];
   float originalY = current_position[Y_AXIS];
   float originalZ = current_position[Z_AXIS];
   float newZ = 15.0; //tweak for optimal zpos while probing
-  //zprobe for all 16 points in ZP_COORDS save distance in index i,2
+  //zprobe for all 16 points in ZP_COORDS save distance at index i,2
   for(int8_t i = 0; i < 16; i++){
     ZP_COORDS[i][2] = zprobe(ZP_COORDS[i][0], ZP_COORDS[i][1] , newZ);
   }
-  
- 
   
   //calculate divergence from level
   
