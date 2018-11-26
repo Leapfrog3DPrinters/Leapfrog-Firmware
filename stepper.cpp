@@ -97,6 +97,8 @@ static float steps_per_pulse = 6400.0/60.0;
 volatile long count_position[NUM_AXIS] = { 0, 0, 0, 0};
 volatile signed char count_direction[NUM_AXIS] = { 1, 1, 1, 1};
 
+extern int Z_STEPPER_SINGLE; 
+
 //===========================================================================
 //=============================functions         ============================
 //===========================================================================
@@ -579,7 +581,24 @@ ISR(TIMER1_COMPA_vect)
       }
     }
     if ((out_bits & (1<<Z_AXIS)) != 0) {   // -direction z-axis
-      WRITE(Z_DIR_PIN,INVERT_Z_DIR);
+      if(Z_STEPPER_SINGLE == 0){
+        WRITE(Z_DIR_PIN,INVERT_Z_DIR);
+        WRITE(Z2_DIR_PIN,INVERT_Z_DIR);
+        WRITE(Z3_DIR_PIN,INVERT_Z_DIR);
+      }
+      
+      else if(Z_STEPPER_SINGLE == 1){
+          WRITE(Z_DIR_PIN,INVERT_Z_DIR);
+      }
+
+      else if(Z_STEPPER_SINGLE == 2){
+          WRITE(Z2_DIR_PIN,INVERT_Z_DIR);
+      }
+
+      else if(Z_STEPPER_SINGLE == 3){
+          WRITE(Z3_DIR_PIN,INVERT_Z_DIR);
+      }
+      
       count_direction[Z_AXIS]=-1;
       CHECK_ENDSTOPS(Z)
       {
@@ -595,7 +614,23 @@ ISR(TIMER1_COMPA_vect)
       }
     }
     else { // +direction
-      WRITE(Z_DIR_PIN,!INVERT_Z_DIR);
+      if(Z_STEPPER_SINGLE == 0){
+        WRITE(Z_DIR_PIN,!INVERT_Z_DIR);
+        WRITE(Z2_DIR_PIN,!INVERT_Z_DIR);
+        WRITE(Z3_DIR_PIN,!INVERT_Z_DIR);
+       }
+
+      if(Z_STEPPER_SINGLE == 1){
+        WRITE(Z_DIR_PIN,!INVERT_Z_DIR);
+      }
+
+      if(Z_STEPPER_SINGLE == 2){
+        WRITE(Z2_DIR_PIN,!INVERT_Z_DIR);
+      }
+
+      if(Z_STEPPER_SINGLE == 3){
+        WRITE(Z3_DIR_PIN,!INVERT_Z_DIR);
+      }
       count_direction[Z_AXIS]=1;
       CHECK_ENDSTOPS(Z)
       {
@@ -661,10 +696,43 @@ ISR(TIMER1_COMPA_vect)
 
       counter_z += current_block->steps_z;
       if (counter_z > 0) {
-        WRITE(Z_STEP_PIN, HIGH);
+        if(Z_STEPPER_SINGLE == 0){
+          WRITE(Z_STEP_PIN, HIGH);
+          WRITE(Z2_STEP_PIN, HIGH);
+          WRITE(Z3_STEP_PIN, HIGH);
+        }
+
+         if(Z_STEPPER_SINGLE == 1){
+          WRITE(Z_STEP_PIN, HIGH);
+         }
+
+        if(Z_STEPPER_SINGLE == 2){
+          WRITE(Z2_STEP_PIN, HIGH);
+        }
+
+        if(Z_STEPPER_SINGLE == 3){
+          WRITE(Z3_STEP_PIN, HIGH);
+        }
         counter_z -= current_block->step_event_count;
         count_position[Z_AXIS]+=count_direction[Z_AXIS];
-        WRITE(Z_STEP_PIN, LOW);
+        
+        if(Z_STEPPER_SINGLE == 0){
+          WRITE(Z_STEP_PIN, LOW);
+          WRITE(Z2_STEP_PIN, LOW);
+          WRITE(Z3_STEP_PIN, LOW);
+        }
+
+         if(Z_STEPPER_SINGLE == 1){
+          WRITE(Z_STEP_PIN, LOW);
+         }
+
+        if(Z_STEPPER_SINGLE == 2){
+          WRITE(Z2_STEP_PIN, LOW);
+        }
+
+        if(Z_STEPPER_SINGLE == 3){
+          WRITE(Z3_STEP_PIN, LOW);
+        }
       }
 
       #ifndef ADVANCE
@@ -840,7 +908,22 @@ void st_init()
     SET_OUTPUT(Y_DIR_PIN);
   #endif
   #if Z_DIR_PIN > -1 
+  
+    if(Z_STEPPER_SINGLE == 0){
     SET_OUTPUT(Z_DIR_PIN);
+      SET_OUTPUT(Z2_DIR_PIN);
+      SET_OUTPUT(Z3_DIR_PIN);
+    }
+    if(Z_STEPPER_SINGLE == 1){
+      SET_OUTPUT(Z_DIR_PIN);
+    }
+    if(Z_STEPPER_SINGLE == 2){
+      SET_OUTPUT(Z2_DIR_PIN);
+    }
+    if(Z_STEPPER_SINGLE == 3){
+      SET_OUTPUT(Z3_DIR_PIN);
+    }
+    
   #endif
   #if E0_DIR_PIN > -1
     SET_OUTPUT(E0_DIR_PIN);
@@ -958,6 +1041,7 @@ void st_init()
     WRITE(Y_STEP_PIN,INVERT_Y_STEP_PIN);
     if(!Y_ENABLE_ON) WRITE(Y_ENABLE_PIN,HIGH);
   #endif
+  //Z_Min_pin bij stepper init? Printer werkt prima maar klopt dit wel?
   #if Z_MIN_PIN > -1
     SET_INPUT(Z_MIN_PIN); 
     #ifdef ENDSTOPPULLUP_ZMIN

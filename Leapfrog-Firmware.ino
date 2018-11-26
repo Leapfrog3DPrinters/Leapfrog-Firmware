@@ -149,7 +149,7 @@ float extruder_offset[2][EXTRUDERS] = {
 bool old_head_pcb[2] = { true, true };
 bool low_temp_hotend[2] = { true, true };
 
-
+int Z_STEPPER_SINGLE = 0;
 //===========================================================================
 //=============================private variables=============================
 //===========================================================================
@@ -397,6 +397,11 @@ void setup_powerhold()
 #endif
 }
 
+#ifdef ENABLE_ZPROBE
+void setup_zprobe(){
+  pinMode(PIEZO_PIN, INPUT_PULLUP);
+}
+#endif
 
 void suicide()
 {
@@ -464,6 +469,9 @@ void setup()
   st_init();    // Initialize stepper;
   setup_doorpin();
   setup_filament_pins();
+#ifdef ENABLE_ZPROBE 
+  setup_zprobe();
+#endif
   SERIAL_PROTOCOLLNPGM("start");
 }
 
@@ -1903,23 +1911,38 @@ float zprobe(const float& x, const float& y, const float& z){
   }
   st_synchronize();
   
+  while(digitalRead(PIEZO_PIN)){
+    destination[Z_AXIS] -= 0.1;
+    plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], 8, active_extruder);
+    SERIAL_PROTOCOLPGM("Piezovalue: ");
+    SERIAL_PROTOCOLLN(PIEZO_PIN);
+    st_synchronize();
+  }
+  rz = float (st_get_position(Z_AXIS))/axis_steps_per_unit[Z_AXIS];
+  plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], rz, current_position[E_AXIS]);
+  st_synchronize;
+ 
+  /*SERIAL_PROTOCOLPGM("RZ: (");
+  SERIAL_PROTOCOL(current_position[X_AXIS]);
+  SERIAL_PROTOCOLPGM(",");
+  SERIAL_PROTOCOL(current_position[Y_AXIS]);
+  SERIAL_PROTOCOLPGM(",");
+  SERIAL_PROTOCOL(rz);
+  SERIAL_PROTOCOLLN(")");*/
   
-  
-  destination[Z_AXIS] = 1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
+  /*destination[Z_AXIS] = 1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
       feedrate = 70;
   plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/60, active_extruder);
   for(int8_t i=0; i < NUM_AXIS; i++) {
     current_position[i] = destination[i];
   }
 
-
-
   st_synchronize();
   rz = float(st_get_position(Z_AXIS))/axis_steps_per_unit[Z_AXIS];
   plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], rz, current_position[E_AXIS]);
-  st_synchronize();
+  st_synchronize();*/
   
-  //move up bed until piezo hit
+  endstops_hit_on_purpose();  
   
   enable_endstops(false, false, false);
   return rz;
@@ -1975,18 +1998,17 @@ void ZAdjust3(float Distance)
 }*/
 
 float zprobe_piezo16(){
-  active_extruder = 1; //probe with left extruder
   float originalX = current_position[X_AXIS];
   float originalY = current_position[Y_AXIS];
   float originalZ = current_position[Z_AXIS];
-  float newZ = 30.0;
+  float newZ = 15.0; //tweak for optimal zpos while probing
   //zprobe for all 16 points in ZP_COORDS save distance in index i,2
-  /*for(int8_t i = 0; i < 16; i++){
+  for(int8_t i = 0; i < 16; i++){
     ZP_COORDS[i][2] = zprobe(ZP_COORDS[i][0], ZP_COORDS[i][1] , newZ);
-  }*/
+  }
   
-  ZP_COORDS[0][2] = zprobe(ZP_COORDS[0][0], ZP_COORDS[0][1] , newZ);
-  ZP_COORDS[1][2] = zprobe(ZP_COORDS[1][0], ZP_COORDS[1][1] , newZ);
+ 
+  
   //calculate divergence from level
   
   //adjust
