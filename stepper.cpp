@@ -623,14 +623,14 @@ ISR(TIMER1_COMPA_vect)
         #endif
       }
  
-      CHECK_PIEZO
+      /*CHECK_PIEZO
       {
         bool piezoVal=READ(PIEZO_PIN);
-        if(!piezoVal /*&& old_piezoVal*/ && (current_block->steps_z > 0)){
+        if(!piezoVal && old_piezoVal && (current_block->steps_z > 0)){
           step_events_completed = current_block->step_event_count;
         } 
         //old_piezoVal = piezoVal;
-      }
+      }*/
 
     }
     else { // +direction
@@ -664,13 +664,13 @@ ISR(TIMER1_COMPA_vect)
           old_z_max_endstop = z_max_endstop;
         #endif
       }
-      CHECK_PIEZO
+      /*CHECK_PIEZO
       {
         bool piezoVal=READ(PIEZO_PIN);
         if(!piezoVal && (current_block->steps_z > 0)){
           step_events_completed = current_block->step_event_count;
         } 
-      }
+      }*/
     }
 
     #ifndef ADVANCE

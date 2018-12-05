@@ -400,7 +400,7 @@ void setup_powerhold()
 
 #ifdef ENABLE_ZPROBE
 void setup_zprobe(){
-  pinMode(PIEZO_PIN, INPUT_PULLUP);
+  pinMode(Z_MIN_PIN, INPUT_PULLUP);
 }
 #endif
 

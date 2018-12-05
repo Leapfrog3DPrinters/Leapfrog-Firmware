@@ -53,14 +53,14 @@
 
 #ifdef ENABLE_ZPROBE
         //all Z motors use pin 30 as enable
-        //ROT2 RIGHT
+        //LEFT
 	#define Z2_STEP_PIN         4
-	#define Z2_DIR_PIN          5
-        //PWM OUT LEFT
+	#define Z2_DIR_PIN          44
+        //RIGHT
 	#define Z3_STEP_PIN         42
 	#define Z3_DIR_PIN          19
 
-	#define PIEZO_PIN           44
+	//#define PIEZO_PIN           44 //piezo now on Z_MIN_PIN
 #endif
 	
 //EMOT
