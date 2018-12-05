@@ -150,6 +150,7 @@ bool old_head_pcb[2] = { true, true };
 bool low_temp_hotend[2] = { true, true };
 
 int Z_STEPPER_SINGLE = 0;
+int PROBING = false;
 //===========================================================================
 //=============================private variables=============================
 //===========================================================================
@@ -825,7 +826,7 @@ void process_commands()
           manage_inactivity();
         }
         break;
-      case 28: //G28 Home all Axis one at a timer
+      case 28: //G28 Home all Axis one at a time
         {
           saved_feedrate = feedrate;
           saved_feedmultiply = feedmultiply;
@@ -900,7 +901,7 @@ void process_commands()
           saved_feedmultiply = feedmultiply;
           feedmultiply = 100;
           previous_millis_cmd = millis();
-
+          
           enable_endstops(true, true, true);//check function
 
           set_destination_to_current();
@@ -954,10 +955,11 @@ void process_commands()
           
           enable_z();
           
-          while(zprobe_piezo16() > 0.5);
+          while(zprobe_piezo_3point(true) > 0.5);
           
           //set stuff back
           enable_endstops(false, false, false);
+          //enable_piezo(false);
           relative_mode = relative_mode_backup;
           feedrate = saved_feedrate;
           feedmultiply = saved_feedmultiply;
@@ -1913,11 +1915,13 @@ inline void dumpVector(const Vector3d& v) {
 float zprobe(const float& x, const float& y, const float& z){
   //probe point and return value
   float rz;
-  
+
   enable_endstops(true, true, true);
+  SERIAL_PROTOCOLLN("set z at 15 (probe starting point)");
   destination[X_AXIS] = current_position[X_AXIS];
   destination[Y_AXIS] = current_position[Y_AXIS];
   destination[Z_AXIS] = z;
+  st_synchronize;
   plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], 8, active_extruder);
   for(int8_t i=0; i < NUM_AXIS; i++) {
     current_position[i] = destination[i];
@@ -1925,6 +1929,7 @@ float zprobe(const float& x, const float& y, const float& z){
   st_synchronize();
   
   //go to measurement point
+  SERIAL_PROTOCOLLN("XY Travel");
   destination[X_AXIS] = x;
   destination[Y_AXIS] = y;
   destination[Z_AXIS] = z;
@@ -1934,38 +1939,21 @@ float zprobe(const float& x, const float& y, const float& z){
   }
   st_synchronize();
   
-  while(READ(PIEZO_PIN)){
-    destination[Z_AXIS] -= 0.1;
-    plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], 8, active_extruder);
-    //SERIAL_PROTOCOLPGM("Piezovalue: ");
-    //SERIAL_PROTOCOLLN(PIEZO_PIN);
-    st_synchronize();
+  enable_piezo(true);
+  delay(300); //ensure piezo is not triggered by XY movement
+  destination[Z_AXIS] = 1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
+  //feedrate = 1200;//max_feedrate[Z_AXIS];
+  plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], 5, active_extruder);
+  for(int8_t i=0; i < NUM_AXIS; i++) {
+    current_position[i] = destination[i];
   }
+  st_synchronize();
+  enable_piezo(false);
   rz = float (st_get_position(Z_AXIS))/axis_steps_per_unit[Z_AXIS];
   plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], rz, current_position[E_AXIS]);
   st_synchronize;
  
-  /*SERIAL_PROTOCOLPGM("RZ: (");
-  SERIAL_PROTOCOL(current_position[X_AXIS]);
-  SERIAL_PROTOCOLPGM(",");
-  SERIAL_PROTOCOL(current_position[Y_AXIS]);
-  SERIAL_PROTOCOLPGM(",");
-  SERIAL_PROTOCOL(rz);
-  SERIAL_PROTOCOLLN(")");*/
-  
-  /*destination[Z_AXIS] = 1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
-      feedrate = 70;
-  plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/60, active_extruder);
-  for(int8_t i=0; i < NUM_AXIS; i++) {
-    current_position[i] = destination[i];
-  }
-
-  st_synchronize();
-  rz = float(st_get_position(Z_AXIS))/axis_steps_per_unit[Z_AXIS];
-  plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], rz, current_position[E_AXIS]);
-  st_synchronize();*/
-  
-  endstops_hit_on_purpose();  
+  endstops_hit_on_purpose();
   
   enable_endstops(false, false, false);
   return rz;
@@ -2020,24 +2008,157 @@ void ZAdjust3(float distance)
   Z_STEPPER_SINGLE=0;//normal moves
 }
 
-float zprobe_piezo16(){
+float zprobe_piezo(bool CorrectionMove){
   float originalX = current_position[X_AXIS];
   float originalY = current_position[Y_AXIS];
   float originalZ = current_position[Z_AXIS];
   float newZ = 15.0; //tweak for optimal zpos while probing
-  //zprobe for all 16 points in ZP_COORDS save distance at index i,2
-  for(int8_t i = 0; i < 16; i++){
+  //zprobe for all points in ZP_COORDS save distance at index i,2
+  for(int8_t i = 0; i < 4; i++){
     ZP_COORDS[i][2] = zprobe(ZP_COORDS[i][0], ZP_COORDS[i][1] , newZ);
   }
   
   //calculate divergence from level
+  //difference in X / difference in Z
+  float aXv = (ZP_COORDS[1][2]-ZP_COORDS[0][2])/(ZP_COORDS[1][0]-ZP_COORDS[0][0]);
+  float aXa = (ZP_COORDS[2][2]-ZP_COORDS[3][2])/(ZP_COORDS[2][0]-ZP_COORDS[3][0]);
+  //difference in Y / difference in Z
+  float aYl = (ZP_COORDS[3][2]-ZP_COORDS[0][2])/(ZP_COORDS[3][1]-ZP_COORDS[0][1]);
+  float aYr = (ZP_COORDS[2][2]-ZP_COORDS[1][2])/(ZP_COORDS[2][1]-ZP_COORDS[1][1]);
+  
+  //mean of height differences on both axis
+  float aX = ( aXv + aXa ) / 2.00;
+  float aY = ( aYl + aYr ) / 2.00;
+  
+  //calculate correction value
+  float leftCorrection = (536.00 * aX / 2.0) - (391.68 * aY / 2.00); //two corrections in X so half by each steppenmotor
+  float rightCorrection = (536.00 * aX / -2.0) - (391.68 * aY / 2.00); //inverted from the other X
+  float midCorrection = 391.68 * aY / 2.0;
+  
+  float MaxCorrectionValue=max(abs(leftCorrection-rightCorrection),abs(midCorrection));
+  if(true)
+  {
+     SERIAL_PROTOCOL("ZP_COORDS[0][2]=");
+      SERIAL_PROTOCOLLN(ZP_COORDS[0][2]);
+      SERIAL_PROTOCOL("ZP_COORDS[1][2]=");
+      SERIAL_PROTOCOLLN(ZP_COORDS[1][2]);
+      SERIAL_PROTOCOL("ZP_COORDS[2][2]=");
+      SERIAL_PROTOCOLLN(ZP_COORDS[2][2]);
+      SERIAL_PROTOCOL("ZP_COORDS[3][2]=");
+      SERIAL_PROTOCOLLN(ZP_COORDS[3][2]);
+
+      SERIAL_PROTOCOL("aXv*1000=");
+      SERIAL_PROTOCOLLN(aXv*1000.00);
+      SERIAL_PROTOCOL("aXa*1000=");
+      SERIAL_PROTOCOLLN(aXa*1000.00);
+
+      SERIAL_PROTOCOL("aYl*1000=");
+      SERIAL_PROTOCOLLN(aYl*1000.00);
+      SERIAL_PROTOCOL("aYr*1000=");
+      SERIAL_PROTOCOLLN(aYr*1000.00);
+
+      SERIAL_PROTOCOL("aX*1000=");
+      SERIAL_PROTOCOLLN(aX*1000.00);
+      SERIAL_PROTOCOL("aY*1000=");
+      SERIAL_PROTOCOLLN(aY*1000.00);
+      
+      SERIAL_PROTOCOL("left correction: ");
+      SERIAL_PROTOCOL(leftCorrection);
+      SERIAL_PROTOCOL("right correction: ");
+      SERIAL_PROTOCOL(rightCorrection);
+      SERIAL_PROTOCOL("middle correction: ");
+      SERIAL_PROTOCOL(midCorrection);
+      
+      SERIAL_PROTOCOL("MaxCorrectionValue=");
+      SERIAL_PROTOCOLLN(MaxCorrectionValue);
+  }
+  delay(1000);
+  destination[X_AXIS] = current_position[X_AXIS];
+  destination[Y_AXIS] = current_position[Y_AXIS];
+  destination[Z_AXIS] = newZ;
+  plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], 10, active_extruder);
+  for(int8_t i=0; i < NUM_AXIS; i++) current_position[i] = destination[i];
+  st_synchronize();
   
   //adjust
-  
+  if(CorrectionMove)
+  {
+    delay(1500);
+    ZAdjust1(midCorrection);
+    delay(1500);
+    ZAdjust2(rightCorrection);
+    delay(1500);
+    ZAdjust3(leftCorrection);
+  }
   //return value
-  return 0.5;
+  return MaxCorrectionValue;
 }
 
+float zprobe_piezo_3point(bool CorrectionMove){
+  float originalX = current_position[X_AXIS];
+  float originalY = current_position[Y_AXIS];
+  float originalZ = current_position[Z_AXIS];
+  float newZ = 15.0; //tweak for optimal zpos while probing
+  //zprobe for all points in ZP_COORDS save distance at index i,2
+    ZP_COORDS[0][2] = zprobe(ZP_COORDS[0][0], ZP_COORDS[0][1] , newZ);
+    ZP_COORDS[1][2] = zprobe(ZP_COORDS[1][0], ZP_COORDS[1][1] , newZ);
+    ZP_COORDS[4][2] = zprobe(ZP_COORDS[4][0], ZP_COORDS[4][1] , newZ);
+    
+  
+  //calculate divergence from level
+  float aX = (ZP_COORDS[1][2] - ZP_COORDS[0][2]) / (ZP_COORDS[1][0] - ZP_COORDS[0][0]);
+  float aY = (ZP_COORDS[4][2] - (ZP_COORDS[0][2] + ZP_COORDS[1][2]) / 2) / (ZP_COORDS[4][1] - ZP_COORDS[1][1]);
+  
+  //calculate correction value
+  float leftCorrection = (536.00 * aX / 2.0); //two corrections in X so half by each steppenmotor
+  float rightCorrection = (536.00 * aX / -2.0); //inverted from the other X
+  float midCorrection = 391.68 * aY;
+  
+  float MaxCorrectionValue=max(abs(leftCorrection-rightCorrection),abs(midCorrection));
+  if(true)
+  {
+     SERIAL_PROTOCOL("ZP_COORDS[0][2]=");
+      SERIAL_PROTOCOLLN(ZP_COORDS[0][2]);
+      SERIAL_PROTOCOL("ZP_COORDS[1][2]=");
+      SERIAL_PROTOCOLLN(ZP_COORDS[1][2]);
+      SERIAL_PROTOCOL("ZP_COORDS[2][2]=");
+      SERIAL_PROTOCOLLN(ZP_COORDS[2][2]);
+      SERIAL_PROTOCOL("ZP_COORDS[3][2]=");
+      SERIAL_PROTOCOLLN(ZP_COORDS[3][2]);
+
+      
+      
+      SERIAL_PROTOCOL("left correction: ");
+      SERIAL_PROTOCOL(leftCorrection);
+      SERIAL_PROTOCOL("right correction: ");
+      SERIAL_PROTOCOL(rightCorrection);
+      SERIAL_PROTOCOL("middle correction: ");
+      SERIAL_PROTOCOL(midCorrection);
+      
+      SERIAL_PROTOCOL("MaxCorrectionValue=");
+      SERIAL_PROTOCOLLN(MaxCorrectionValue);
+  }
+  delay(1000);
+  destination[X_AXIS] = current_position[X_AXIS];
+  destination[Y_AXIS] = current_position[Y_AXIS];
+  destination[Z_AXIS] = newZ;
+  plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], 10, active_extruder);
+  for(int8_t i=0; i < NUM_AXIS; i++) current_position[i] = destination[i];
+  st_synchronize();
+  
+  //adjust
+  if(CorrectionMove)
+  {
+    delay(1500);
+    ZAdjust1(midCorrection);
+    delay(1500);
+    ZAdjust2(rightCorrection);
+    delay(1500);
+    ZAdjust3(leftCorrection);
+  }
+  //return value
+  return MaxCorrectionValue;
+}
 #endif
 
 #ifdef FAST_PWM_FAN
