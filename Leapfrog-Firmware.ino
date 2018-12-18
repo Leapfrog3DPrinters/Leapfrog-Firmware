@@ -860,9 +860,10 @@ void process_commands()
 
           // Home Y
           if (home_all_axis || homeY) HOMEAXIS(Y);
-
+          
+          delay(1000); //give tpiezo time to settle
           // Home Z
-          if (home_all_axis || homeZ)  HOMEAXIS(Z);
+          if (home_all_axis || homeZ) HOMEAXIS(Z);
 
           // Set the X position and add M206
           if (code_seen(axis_codes[X_AXIS])) {
@@ -953,7 +954,7 @@ void process_commands()
           
           endstops_hit_on_purpose();
           
-          enable_z();
+          enable_z(); //don't need this, do I?
           
           while(zprobe_piezo_3point(true) > 0.5);
           
@@ -1916,12 +1917,12 @@ float zprobe(const float& x, const float& y, const float& z){
   //probe point and return value
   float rz;
 
-  enable_endstops(true, true, true);
+  enable_endstops(true, true, true); //don't need this
   SERIAL_PROTOCOLLN("set z at 15 (probe starting point)");
   destination[X_AXIS] = current_position[X_AXIS];
   destination[Y_AXIS] = current_position[Y_AXIS];
   destination[Z_AXIS] = z;
-  st_synchronize;
+  //st_synchronize();
   plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], 8, active_extruder);
   for(int8_t i=0; i < NUM_AXIS; i++) {
     current_position[i] = destination[i];
@@ -1933,14 +1934,16 @@ float zprobe(const float& x, const float& y, const float& z){
   destination[X_AXIS] = x;
   destination[Y_AXIS] = y;
   destination[Z_AXIS] = z;
-      plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], 200, active_extruder);
+  plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], 200, active_extruder);
   for(int8_t i=0; i < NUM_AXIS; i++) {
     current_position[i] = destination[i];
   }
+  //otherwise hotend will be pushed away by dragchain
+  enable_x0();
   st_synchronize();
   
-  enable_piezo(true);
-  delay(300); //ensure piezo is not triggered by XY movement
+  enable_piezo(true); //noy used
+  delay(1000); //ensure piezo is not triggered by XY movement, can be tweaked down
   destination[Z_AXIS] = 1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
   //feedrate = 1200;//max_feedrate[Z_AXIS];
   plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], 5, active_extruder);
@@ -1948,14 +1951,14 @@ float zprobe(const float& x, const float& y, const float& z){
     current_position[i] = destination[i];
   }
   st_synchronize();
-  enable_piezo(false);
+  enable_piezo(false);//not used
   rz = float (st_get_position(Z_AXIS))/axis_steps_per_unit[Z_AXIS];
   plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], rz, current_position[E_AXIS]);
-  st_synchronize;
+  st_synchronize();
  
   endstops_hit_on_purpose();
   
-  enable_endstops(false, false, false);
+  enable_endstops(false, false, false); //don't need this
   return rz;
 }
 
