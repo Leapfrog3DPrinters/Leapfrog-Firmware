@@ -85,10 +85,7 @@ static bool old_y_max_endstop=false;
 static bool old_z_min_endstop=false;
 static bool old_z_max_endstop=false;
 
-static bool old_piezoVal=false;
-
 static bool check_endstops[3] = { true, true, true };
-static bool check_piezo = false;
 
 static bool filament_status = true; // check initial state of filament sensor
 static bool init_status = true;
@@ -108,7 +105,6 @@ extern bool PROBING;
 //===========================================================================
 
 #define CHECK_ENDSTOPS(LETTER)  if(check_endstops[LETTER##_AXIS])
-#define CHECK_PIEZO     if(check_piezo)
 
 
 // intRes = intIn1 * intIn2 >> 16
@@ -313,10 +309,7 @@ void enable_endstops(bool x, bool y, bool z)
   check_endstops[Y_AXIS] = y;
   check_endstops[Z_AXIS] = z;
 }
-void enable_piezo(bool check)
-{
-  check_piezo = check;
-}
+
 
 //         __________________________
 //        /|                        |\     _________________         ^
@@ -622,15 +615,6 @@ ISR(TIMER1_COMPA_vect)
           old_z_min_endstop = z_min_endstop;          
         #endif
       }
- 
-      /*CHECK_PIEZO
-      {
-        bool piezoVal=READ(PIEZO_PIN);
-        if(!piezoVal && old_piezoVal && (current_block->steps_z > 0)){
-          step_events_completed = current_block->step_event_count;
-        } 
-        //old_piezoVal = piezoVal;
-      }*/
 
     }
     else { // +direction
@@ -664,13 +648,7 @@ ISR(TIMER1_COMPA_vect)
           old_z_max_endstop = z_max_endstop;
         #endif
       }
-      /*CHECK_PIEZO
-      {
-        bool piezoVal=READ(PIEZO_PIN);
-        if(!piezoVal && (current_block->steps_z > 0)){
-          step_events_completed = current_block->step_event_count;
-        } 
-      }*/
+      
     }
 
     #ifndef ADVANCE

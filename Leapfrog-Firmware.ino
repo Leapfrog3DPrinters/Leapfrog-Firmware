@@ -861,7 +861,7 @@ void process_commands()
           // Home Y
           if (home_all_axis || homeY) HOMEAXIS(Y);
           
-          delay(1000); //give tpiezo time to settle
+          delay(1000); //give piezo time to settle
           // Home Z
           if (home_all_axis || homeZ) HOMEAXIS(Z);
 
@@ -960,7 +960,6 @@ void process_commands()
           
           //set stuff back
           enable_endstops(false, false, false);
-          //enable_piezo(false);
           relative_mode = relative_mode_backup;
           feedrate = saved_feedrate;
           feedmultiply = saved_feedmultiply;
@@ -1942,7 +1941,6 @@ float zprobe(const float& x, const float& y, const float& z){
   enable_x0();
   st_synchronize();
   
-  enable_piezo(true); //noy used
   delay(1000); //ensure piezo is not triggered by XY movement, can be tweaked down
   destination[Z_AXIS] = 1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
   //feedrate = 1200;//max_feedrate[Z_AXIS];
@@ -1951,7 +1949,6 @@ float zprobe(const float& x, const float& y, const float& z){
     current_position[i] = destination[i];
   }
   st_synchronize();
-  enable_piezo(false);//not used
   rz = float (st_get_position(Z_AXIS))/axis_steps_per_unit[Z_AXIS];
   plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], rz, current_position[E_AXIS]);
   st_synchronize();
