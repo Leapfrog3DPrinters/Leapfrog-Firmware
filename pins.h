@@ -60,6 +60,7 @@
 	#define Z3_STEP_PIN         42
 	#define Z3_DIR_PIN          19
 
+
 	//#define PIEZO_PIN           44 //piezo now on Z_MIN_PIN
 #endif
 	

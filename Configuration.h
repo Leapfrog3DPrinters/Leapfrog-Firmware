@@ -12,9 +12,9 @@
   #define STRING_CONFIG_H_AUTHOR "Leapfrog 3D Printers" //Who made the changes.
 
   #define LEAPFROG_LMC_VERSION "LMC v2"
-  #define LEAPFROG_FIRMWARE_VERSION "2.8.2"
+  #define LEAPFROG_FIRMWARE_VERSION "3.1.0"
 
-  #define LEAPFROG_MODEL "Bolt"
+  #define LEAPFROG_MODEL "BoltPro2" //this is actually built on bolt firmware
 
   // This determines the communication speed of the printer
   #define BAUDRATE 250000
@@ -124,7 +124,7 @@
   #define PARKING_FEEDRATE 300 * 60
 
   // default settings
-  #define DEFAULT_AXIS_STEPS_PER_UNIT   {(100.0/3.0)*4.0, (160.0/3.0)*2.0, 9600.0/10.0*2.0, 99.30*2.0}  //55.465*2 HS Creatr settings for 16 steps all 16 steping
+  #define DEFAULT_AXIS_STEPS_PER_UNIT   {(100.0/3.0)*4.0, (160.0/3.0)*2.0, 12000.0/5.0, 99.30*2.0}  //55.465*2 HS Creatr settings for 16 steps all 16 steping
   #define DEFAULT_MAX_FEEDRATE          {400, 400, 20, 200}    // (mm/sec) Creatr was 200, 200, 10, 100, 100
   #define DEFAULT_MAX_ACCELERATION      {400, 400, 100, 30}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 
@@ -176,11 +176,11 @@
     {0.0, 203.7, 0.0}, {85.3, 203.7, 0.0}, {207.7, 203.7, 0.0}, {300.0, 203.7, 0.0},
     {0.0, 300.0, 0.0}, {85.3, 300.0, 0.0}, {207.7, 300.0, 0.0}, {300.0, 300.0, 0.0}*/
     
-    {0.0, 0.0, 0.0},  //links voor
-    {330.0, 0.0, 0.0},  //rechts voor
-    {0.0, 322.0, 0.0},  //links achter
-    {330.0, 322.0, 0.0},   //rechts achter
-    {165.0, 322.0, 0.0}  //midden achter
+    {0.0, 0.0, 0.0},  //left front
+    {330.0, 0.0, 0.0},  //right front
+    {0.0, 322.0, 0.0},  //left back
+    {330.0, 322.0, 0.0},   //right back
+    {165.0, 322.0, 0.0}  //mid back
   };
  
   static Vector3d xbasis(1,0,0);
