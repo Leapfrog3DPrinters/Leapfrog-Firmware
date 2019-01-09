@@ -176,11 +176,11 @@
     {0.0, 203.7, 0.0}, {85.3, 203.7, 0.0}, {207.7, 203.7, 0.0}, {300.0, 203.7, 0.0},
     {0.0, 300.0, 0.0}, {85.3, 300.0, 0.0}, {207.7, 300.0, 0.0}, {300.0, 300.0, 0.0}*/
     
-    {0.0, 0.0, 0.0},  //left front
-    {330.0, 0.0, 0.0},  //right front
-    {0.0, 322.0, 0.0},  //left back
-    {330.0, 322.0, 0.0},   //right back
-    {165.0, 322.0, 0.0}  //mid back
+    {33.0, 70.0, 0.0},  //left front
+    {268.0, 70.0, 0.0},  //right front
+    {33.0, 250.0, 0.0},  //left back
+    {268.0, 250.0, 0.0},   //right back
+    {175.5, 250.0, 0.0}  //mid back
   };
  
   static Vector3d xbasis(1,0,0);
@@ -189,7 +189,6 @@
  
   #endif
   
-  //#include "Configuration_Bolt_Single.h"
   #include "Configuration_Bolt_DualX.h"
   #include "Configuration_adv.h"
   #include "thermistortables.h"

@@ -928,6 +928,9 @@ void process_commands()
 
           // Home Y
           if (home_all_axis || homeY) HOMEAXIS(Y);
+          
+          //prevent accidental piezo triggering
+          delay(500);
 
           // Home Z
           if (home_all_axis || homeZ)  HOMEAXIS(Z);
