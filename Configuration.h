@@ -180,7 +180,8 @@
     {268.0, 70.0, 0.0},  //right front
     {33.0, 250.0, 0.0},  //left back
     {268.0, 250.0, 0.0},   //right back
-    {175.5, 250.0, 0.0}  //mid back
+    {175.5, 250.0, 0.0},  //mid back
+    (175.5, 160.0, 0.0)  //mid mid
   };
  
   static Vector3d xbasis(1,0,0);

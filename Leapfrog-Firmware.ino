@@ -739,13 +739,14 @@ static void homeaxis(int axis)
     plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate / 60, active_extruder);
     st_synchronize();
 
+    if(axis == Z_AXIS) delay(500); //prevent unwanted piezo triggers
     current_position[axis] = 0;
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
     destination[axis] = -home_retract_mm(axis) * home_dir(axis) * swap_dir;
     plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate / 60, active_extruder);
     st_synchronize();
 
-
+    if(axis == Z_AXIS) delay(500); //prevent unwanted piezo triggers
     destination[axis] = 2 * home_retract_mm(axis) * home_dir(axis) * swap_dir;
     feedrate = homing_feedrate[axis] / 2;
     plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate / 60, active_extruder);
@@ -969,6 +970,8 @@ void process_commands()
           previous_millis_cmd = millis();
 
           endstops_hit_on_purpose(); // clear endstop hit flags
+          
+          
           break;
         }
 #endif
@@ -2162,7 +2165,10 @@ float zprobe_piezo_3point(bool CorrectionMove){
   //return value
   return MaxCorrectionValue;
 }
+
 #endif
+
+
 
 #ifdef FAST_PWM_FAN
 void setPwmFrequency(uint8_t pin, int val)
