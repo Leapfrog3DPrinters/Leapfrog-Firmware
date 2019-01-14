@@ -958,11 +958,15 @@ void process_commands()
           
           endstops_hit_on_purpose();
           
-          enable_z(); //don't need this, do I?
+          //enable_z(); //don't need this, do I?
           
+          //probe with right nozzle
+          tmp_extruder = active_extruder;
+          active_extruder = 0;
           while(zprobe_piezo_3point(true) > 0.5);
-          
+          computeNozzleOffset();
           //set stuff back
+          active_extruder = tmp_extruder;
           enable_endstops(false, false, false);
           relative_mode = relative_mode_backup;
           feedrate = saved_feedrate;
@@ -2164,6 +2168,21 @@ float zprobe_piezo_3point(bool CorrectionMove){
   }
   //return value
   return MaxCorrectionValue;
+}
+
+float computeNozzleOffset(){
+  active_extruder = 1;
+
+  float originalX = current_position[X_AXIS];
+  float originalY = current_position[Y_AXIS];
+  float originalZ = current_position[Z_AXIS];
+  float newZ = 15.0;
+  
+  ZP_COORDS[5][2] = zprobe(ZP_COORDS[5][0], ZP_COORDS[5][1] , newZ);
+  
+  active_extruder = tmp_extruder;
+  float offset = 0.0 + ZP_COORDS[5][2];
+  return offset;
 }
 
 #endif
