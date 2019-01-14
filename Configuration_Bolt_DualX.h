@@ -44,7 +44,7 @@
 const bool X0_ENDSTOPS_INVERTING = false; // set to true to invert the logic of the endstops.
 const bool X1_ENDSTOPS_INVERTING = false; // set to true to invert the logic of the endstops.
 const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of the endstops.
-const bool Z_MIN_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstops.
+const bool Z_MIN_ENDSTOP_INVERTING = true; // set to true to invert the logic of the endstops.
 const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstops.
 //#define DISABLE_MAX_ENDSTOPS
 

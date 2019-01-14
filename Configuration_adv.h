@@ -68,7 +68,7 @@
 
 #define ENDSTOPS_DURING_PRINT_X false // If false the endstops will only be used when homing X, not moving in x
 #define ENDSTOPS_DURING_PRINT_Y false // If false the endstops will only be used when homing Y, not moving in y
-#define ENDSTOPS_DURING_PRINT_Z false // If false the endstops will only be used when homing Z, not moving in z
+#define ENDSTOPS_DURING_PRINT_Z true // If false the endstops will only be used when homing Z, not moving in z
 
 //#define Z_LATE_ENABLE // Enable Z the last moment. Needed if your Z driver overheats.
 

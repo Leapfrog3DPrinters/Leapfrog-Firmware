@@ -963,7 +963,7 @@ void process_commands()
           //probe with right nozzle
           tmp_extruder = active_extruder;
           active_extruder = 0;
-          while(zprobe_piezo_3point(true) > 0.5);
+          while(zprobe_piezo/*_3point*/(true) > 0.5);
           computeNozzleOffset();
           //set stuff back
           active_extruder = tmp_extruder;
@@ -2170,6 +2170,7 @@ float zprobe_piezo_3point(bool CorrectionMove){
   return MaxCorrectionValue;
 }
 
+//Work in progress
 float computeNozzleOffset(){
   active_extruder = 1;
 
