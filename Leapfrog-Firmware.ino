@@ -1715,7 +1715,12 @@ void process_commands()
                             break;
                           }
                           break;		
-	
+	        case 419: //Update pulsecount to controller
+                
+                          SERIAL_PROTOCOL(EncPulsesR);
+                          myEnc.write(0);
+                          break;
+                           
 		case 500: // Store settings in EEPROM
 			EEPROM_StoreSettings();
 			break;
