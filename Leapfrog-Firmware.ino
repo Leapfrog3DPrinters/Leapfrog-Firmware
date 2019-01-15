@@ -34,6 +34,10 @@
 #include "EEPROMwrite.h"
 #include "language.h"
 #include "pins_arduino.h"
+#include "Encoder.h"
+#include "Adafruit_PN532.h" //Serial is causing issues, needs to be fixed
+#include <Wire.h>
+#include <SPI.h>
 
 #define VERSION_STRING  "1.0.0"
 
@@ -92,7 +96,10 @@
  // M303 - PID relay autotune S<temperature> sets the target temperature. (default target temperature = 150C)
  // M304 - Set Bed PID parameters P I and D
  // M400 - Finish all moves
- // M500 - stores parameters in EEPROM
+ // M416 - Reading & Loading in New Filament Tag (RFID)   
+ // M417 - Removing Filament Spool (RFID)				   
+ // M418 - Creating New Filament Data (RFID)			   
+ // M500 - stores parameters in EEPROM		
  // M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
  // M502 - reverts to the default "factory settings".  You still need to store them in EEPROM afterwards if you want to.
  // M503 - print the current settings (from memory not from eeprom)
@@ -132,6 +139,8 @@ uint8_t active_extruder = 0;
 unsigned char FanSpeed = 0;
 bool door_status = false;
 int swap_dir = 1; // Used to swap homing direction for X-axis. 1 = normal, -1 = opposite direction
+
+
 
 #if SAFE_MOVES
 bool position_known[3] = { false, false, false }; // If current position is unknown, a homing sequence is required (only for X, Y, Z)
@@ -213,6 +222,36 @@ int toolnum;
 bool Stopped = false;
 
 
+//RFID Variables
+long EncPulsesR = -999; //Filament usage detection for RFID
+long EncPulsesL = -999; //Filament usage detection for RFID
+int TimeOut = 5000;     //Timeout when loking for RFID Tag
+int Runtime;            //Time looking for RFID Tag
+unsigned long startTime;//Time at startpoint of looking for RFID Tag
+byte l = 0; //          //Which Line to Read from RFID Tag
+byte y;                 //Which line to read/write from RFID Tag
+byte tLine1, tLine2 = 0;//Which Memory Block to Read from RFID Tag
+char msg[16] = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}; //Buffer for RFID message, to avoid any dots
+char msg2[16] = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}; //Buffer for RFID message, to avoid any dots
+char r[1];               //Buffer for reading message from Serial
+byte n = 0;              //Number in RFID message
+boolean success2 = false;//Bool for checking if RFID is written
+boolean done;            //Bool for checking if RFID assignment is correctly done
+uint8_t keya[6] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };//Key for Authenticating Memory Sectors on RFID Tag
+uint8_t success;         //For checking if RFID Tag is correctly read/written
+uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
+uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
+
+#define PN532R_SCK  (4)
+#define PN532R_MOSI (7)
+#define PN532R_SS   (6)
+#define PN532R_MISO (5)
+#define PN532_IRQ   (2)
+#define PN532_RESET (3)
+
+Adafruit_PN532 nfcR(PN532R_SS);
+Encoder myEnc(10, 11);
+
 
 //===========================================================================
 //=============================ROUTINES=============================
@@ -250,7 +289,7 @@ extern "C" {
 	}
 }
 
-//adds an command to the main command buffer
+//adds a command to the main command buffer
 //thats really done in a non-safe way.
 //needs overworking someday
 void enquecommand(const char *cmd)
@@ -267,6 +306,100 @@ void enquecommand(const char *cmd)
 		buflen += 1;
 	}
 }
+
+void WriteTagSector(byte tLine1){
+  tLine2 = tLine1 +1; 
+  //success = nfcR.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+
+    if(success){
+    //Serial.println("Found an ISO14443A card");
+   
+    
+    if (uidLength == 4)
+    {
+      
+      
+    // success = nfcR.mifareclassic_AuthenticateBlock(uid, uidLength, tLine1, 0, keya);
+     
+      if (success)
+      {
+      
+        uint8_t data[16];
+	uint8_t data2[16];
+
+       memcpy(data, msg, sizeof data);
+       memcpy(data2, msg2, sizeof data2);
+     //  success = nfcR.mifareclassic_WriteDataBlock (tLine1, data);
+       //success2 = nfcR.mifareclassic_WriteDataBlock (tLine2, data2);
+
+       
+        if (success && success2)
+        {
+          
+          memset(msg, ' ', sizeof(msg));
+          memset(msg2, ' ', sizeof(msg2)); 
+          
+
+        }
+        else
+        {
+          MYSERIAL.print("Ooops ... unable to read the requested block.  Try another key?\n");
+      delay(1000);
+    ;  
+      }
+      }
+      else
+      {
+        MYSERIAL.print("Ooops ... authentication failed: Try another key?\n");
+        
+    delay(1000);  
+    }
+    }
+    }
+  }
+  
+
+  
+  
+  
+void ReadTagSector()//Read a sector from an RFID Tag
+{
+tLine2 = tLine1 + 1;
+//success = nfcR.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+if(success){
+    if (uidLength == 4)
+    {
+  //    success = nfcR.mifareclassic_AuthenticateBlock(uid, uidLength, tLine1, 0, keya);
+        if (success)
+        {
+          uint8_t data[16];
+          uint8_t data2[16];
+//	  success = nfcR.mifareclassic_ReadDataBlock(tLine1, data);
+  //        success2 = nfcR.mifareclassic_ReadDataBlock(tLine2, data2);
+          if (success && success2)
+          {
+    //        nfcR.PrintHexChar(data, 16);
+      //      nfcR.PrintHexChar(data2, 16);
+            if(tLine2 == 17)
+              {
+        //      nfcR.PrintHex(uid, uidLength);
+              }
+          }
+          else
+          {
+            MYSERIAL.print("Ooops ... unable to read the requested block.  Try another key?\n");
+            delay(1000);  
+          }
+        }
+        else
+        {
+          MYSERIAL.print("Ooops ... authentication failed: Try another key?\n");
+          delay(1000);  
+        }
+      }
+    }
+  }
+
 
 void setup_killpin()
 {
@@ -452,6 +585,19 @@ void setup()
 	setup_doorpin();
 	setup_filament_pins();
 	SERIAL_PROTOCOLLNPGM("start");
+        RFID_init(); //RFID Initiation
+}
+void RFID_init(){
+  nfcR.begin();
+        uint32_t versiondata = nfcR.getFirmwareVersion();
+        if (! versiondata) {
+            SERIAL_PROTOCOL("Didn't find PN53x board");
+            SERIAL_PROTOCOL("SomeError");
+            }
+ 
+  nfcR.setPassiveActivationRetries(0x19);
+  
+  nfcR.SAMConfig();
 }
 
 void readCommand()
@@ -463,7 +609,7 @@ void readCommand()
 void loop()
 {
 	readCommand();
-
+	ReadEncR();		//Read Encoder Pulses for RFID
 	if (buflen)
 	{
 		process_commands();
@@ -864,6 +1010,27 @@ void process_commands()
 			endstops_hit_on_purpose(); // clear endstop hit flags
 			break;
 		}
+            #ifdef FILAMENT_DETECTION  
+                case 40: // Test FILAMENT_PIN_E0 / FILAMENT_PIN_E1
+                  SERIAL_PROTOCOLPGM("Total errors: ");
+                  SERIAL_PROTOCOLLN(total_errors);
+                  SERIAL_PROTOCOLPGM("Short errors: ");
+                  SERIAL_PROTOCOL(total_s_errors);
+                  SERIAL_PROTOCOLPGM(", "); 
+                  SERIAL_PROTOCOLLN(s_error);
+                  SERIAL_PROTOCOLPGM("Long errors: ");
+                  SERIAL_PROTOCOL(total_l_errors);
+                  SERIAL_PROTOCOLPGM(", ");
+                  SERIAL_PROTOCOLLN(l_error);
+                 break;
+                case 41:
+                  SERIAL_PROTOCOLLN("Reset errors");
+                  total_errors = 0;
+                  total_l_errors = 0;
+                  total_s_errors = 0;
+                  l_error = 0;
+                  s_error = 0;
+                #endif
 		case 90: // G90
 			relative_mode = false;
 			break;
@@ -1416,6 +1583,139 @@ void process_commands()
 		case 400: // M400 finish all moves
 			st_synchronize();
 			break;
+			
+		case 416: //M416 Read RFID Tag
+			
+			//Serial.print("Reading tag\n");
+			startTime = millis();
+			while(millis() - startTime < TimeOut)
+			        {
+				Runtime = millis() - startTime;
+				success = nfcR.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+				if (success)
+					{
+					SERIAL_PROTOCOL("c\n");
+					SERIAL_PROTOCOL("v\n");
+					delay(500);
+						for(y = 1; y <5; y++)
+						        {
+						        tLine1 = y*4;
+						        ReadTagSector();
+						        done  = true;
+						        }
+					break;
+					}
+			
+          			}
+			SERIAL_PROTOCOL("c\n");
+			if(done == false){
+				
+			  SERIAL_PROTOCOL("x\n");
+			  break;
+			  }
+			done = false;  
+			break;
+
+                case 417: //M417 Removing Filament Spool After Updating RFID Tag
+                              
+                	SERIAL_PROTOCOL(EncPulsesR);
+                        SERIAL_PROTOCOL("\n");
+                        SERIAL_PROTOCOL("Checking UID\n");
+                        startTime = millis();
+                        while(millis() - startTime < TimeOut){
+                                Runtime = millis() - startTime;
+                                success = nfcR.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+                                if(success){
+                                         
+                                        SERIAL_PROTOCOL("c\n");
+                                        SERIAL_PROTOCOL("v\n");
+                                        nfcR.PrintHex(uid, uidLength);
+                                        delay(500);
+                                        if(MYSERIAL.available()>32){
+                                        r[0] = MYSERIAL.read();
+                                        if (r[0] =='+'){
+                                                SERIAL_PROTOCOL("Updating\n");
+                                                delay(1000);
+                                                for(n = 0; n<=15; n++){
+                                                        memset(r, 0, sizeof r);
+                                                        r[0] = MYSERIAL.read();
+                                                        if(r[0] == '-'){
+                                                        break;
+                                                        }
+                                                        msg[n] = r[0];
+                                                        }
+                                                
+                                                for(n = 0; n<=15; n++){
+                                                        memset(r, 0, sizeof r);
+                                                        r[0] = MYSERIAL.read();
+                                                        if(r[0] == '-'){
+                                                        break;
+                                                        }
+                                                        msg2[n] = r[0];
+                                                        }
+                                        
+                                                tLine1 = 16;
+                                                WriteTagSector(tLine1);
+                                                myEnc.write(0);
+                                                SERIAL_PROTOCOL("Done writing\n");
+                                                done = true;
+                                                break;
+                                                }
+                                        else if(r[0] != '+'){
+                                                SERIAL_PROTOCOL(r[0]);
+                                                SERIAL_PROTOCOL("\n");
+                                                SERIAL_PROTOCOL("UID's do not match. Wrong side chosen?\n");
+                                                break;
+                                                }
+                                        }
+                                }
+                                break;
+                                }
+                        SERIAL_PROTOCOL("c\n");
+                        if(done == false){
+                                SERIAL_PROTOCOL("x\n");
+                                }
+                        done = false;
+                        break;
+                          		
+                case 418: //M418 Create new RFID Tag
+                        
+                          startTime = millis();
+                          while(millis() - startTime < TimeOut){
+                                  Runtime = millis() - startTime;
+                                  success = nfcR.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+                      
+                                  if (success){
+                                          for(l=1; l<5;l++){
+                                          delay(1000);
+                                          for(n = 0; n<=15; n++)
+                                                  {
+                                                  r[0] = MYSERIAL.read();
+                                                  if(r[0] == '>'){
+                                                  break;}
+                                                  msg[n] = r[0];
+                                                  }
+                                          n = 0;
+                                          tLine1 = l*4;
+                                          WriteTagSector(tLine1);
+                                          if (l==4)
+                                            {
+                                            SERIAL_PROTOCOL("c\n");
+                                            SERIAL_PROTOCOL("v\n");
+                                            done = true;
+                                            }
+                                          break;
+                                          }
+                                  }
+                            SERIAL_PROTOCOL("c\n");
+                            if(done == false){
+                              SERIAL_PROTOCOL("x\n");
+                            }
+                            done = false;
+                            break;
+                          }
+                          break;		
+	
 		case 500: // Store settings in EEPROM
 			EEPROM_StoreSettings();
 			break;
@@ -1581,7 +1881,7 @@ void process_commands()
 		SERIAL_ECHOLNPGM("\"");
 	}
 	ClearToSend();
-}
+} 
 
 void FlushSerialRequestResend()
 {
@@ -1620,7 +1920,6 @@ void get_coordinates()
 		if (next_feedrate > 0.0) feedrate = next_feedrate;
 	}
 }
-
 
 void clamp_to_software_endstops(float target[3])
 {
@@ -2227,3 +2526,12 @@ static void outputDestination()
 
 	SERIAL_PROTOCOLLN("");
 }
+
+
+void ReadEncR(){				//Reading Encoder Pulses for RFID Filament Usage
+  long newPos = myEnc.read();
+  if (newPos != EncPulsesR) {
+    EncPulsesR = newPos;
+  }
+}
+
