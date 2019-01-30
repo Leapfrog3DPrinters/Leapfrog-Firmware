@@ -35,7 +35,7 @@
 #include "language.h"
 #include "pins_arduino.h"
 #include "Encoder.h"
-#include "Adafruit_PN532.h" //Serial is causing issues, needs to be fixed
+#include "Adafruit_PN532.h" 
 #include <Wire.h>
 #include <SPI.h>
 
@@ -241,7 +241,10 @@ uint8_t keya[6] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };//Key for Authenticatin
 uint8_t success;         //For checking if RFID Tag is correctly read/written
 uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
 uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
+boolean TagState = 0;        //New state of tagpresence
+boolean LastTagState = 0;    //Current state of tagpresence
 
+//Define the pins the RFID board is connected to
 #define PN532R_SCK  (4)
 #define PN532R_MOSI (7)
 #define PN532R_SS   (6)
@@ -249,6 +252,7 @@ uint8_t uidLength;                        // Length of the UID (4 or 7 bytes dep
 #define PN532_IRQ   (2)
 #define PN532_RESET (3)
 
+//Attach the board and encoder
 Adafruit_PN532 nfcR(PN532R_SS);
 Encoder myEnc(10, 11);
 
@@ -309,7 +313,7 @@ void enquecommand(const char *cmd)
 
 void WriteTagSector(byte tLine1){
   tLine2 = tLine1 +1; 
-  //success = nfcR.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+  success = nfcR.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);//Try to find tag
 
     if(success){
     //Serial.println("Found an ISO14443A card");
@@ -319,7 +323,7 @@ void WriteTagSector(byte tLine1){
     {
       
       
-    // success = nfcR.mifareclassic_AuthenticateBlock(uid, uidLength, tLine1, 0, keya);
+     success = nfcR.mifareclassic_AuthenticateBlock(uid, uidLength, tLine1, 0, keya);//Authenticate sector
      
       if (success)
       {
@@ -329,8 +333,8 @@ void WriteTagSector(byte tLine1){
 
        memcpy(data, msg, sizeof data);
        memcpy(data2, msg2, sizeof data2);
-     //  success = nfcR.mifareclassic_WriteDataBlock (tLine1, data);
-       //success2 = nfcR.mifareclassic_WriteDataBlock (tLine2, data2);
+       success = nfcR.mifareclassic_WriteDataBlock (tLine1, data);//Write the messages to the specified secto and blocks
+       success2 = nfcR.mifareclassic_WriteDataBlock (tLine2, data2);
 
        
         if (success && success2)
@@ -365,24 +369,24 @@ void WriteTagSector(byte tLine1){
 void ReadTagSector()//Read a sector from an RFID Tag
 {
 tLine2 = tLine1 + 1;
-//success = nfcR.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+success = nfcR.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);//Find a tag
 if(success){
     if (uidLength == 4)
     {
-  //    success = nfcR.mifareclassic_AuthenticateBlock(uid, uidLength, tLine1, 0, keya);
+      success = nfcR.mifareclassic_AuthenticateBlock(uid, uidLength, tLine1, 0, keya);//Authenticate sector
         if (success)
         {
           uint8_t data[16];
           uint8_t data2[16];
-//	  success = nfcR.mifareclassic_ReadDataBlock(tLine1, data);
-  //        success2 = nfcR.mifareclassic_ReadDataBlock(tLine2, data2);
+	  success = nfcR.mifareclassic_ReadDataBlock(tLine1, data);//Read the specified sector and blocks
+          success2 = nfcR.mifareclassic_ReadDataBlock(tLine2, data2);
           if (success && success2)
           {
-    //        nfcR.PrintHexChar(data, 16);
-      //      nfcR.PrintHexChar(data2, 16);
+            nfcR.PrintHexChar(data, 16);//Write the found data
+            nfcR.PrintHexChar(data2, 16);
             if(tLine2 == 17)
               {
-        //      nfcR.PrintHex(uid, uidLength);
+              nfcR.PrintHex(uid, uidLength);
               }
           }
           else
@@ -595,7 +599,7 @@ void RFID_init(){
             SERIAL_PROTOCOL("SomeError");
             }
  
-  nfcR.setPassiveActivationRetries(0x19);
+  nfcR.setPassiveActivationRetries(0x19);//Set a max number of polling retries to prevent rfid board from getting stuck when no tag is found
   
   nfcR.SAMConfig();
 }
@@ -924,9 +928,9 @@ void process_commands()
 			{
 				get_coordinates(); // For X Y Z E F
 				prepare_move();
-#ifdef FILAMENT_DETECTION
-				checkFilamentError();
-#endif
+                                #ifdef FILAMENT_DETECTION
+				  checkFilamentError();
+                                #endif
 				//ClearToSend();
 			}
 			break;
@@ -1591,7 +1595,7 @@ void process_commands()
 			while(millis() - startTime < TimeOut)
 			        {
 				Runtime = millis() - startTime;
-				success = nfcR.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+				success = nfcR.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);//Try to find a tag
 				if (success)
 					{
 					SERIAL_PROTOCOL("c\n");
@@ -1600,7 +1604,7 @@ void process_commands()
 						for(y = 1; y <5; y++)
 						        {
 						        tLine1 = y*4;
-						        ReadTagSector();
+						        ReadTagSector();//Read the lines
 						        done  = true;
 						        }
 					break;
@@ -1629,14 +1633,14 @@ void process_commands()
                                          
                                         SERIAL_PROTOCOL("c\n");
                                         SERIAL_PROTOCOL("v\n");
-                                        nfcR.PrintHex(uid, uidLength);
+                                        nfcR.PrintHex(uid, uidLength);//Write Tag UID for comparison
                                         delay(500);
                                         if(MYSERIAL.available()>32){
                                         r[0] = MYSERIAL.read();
-                                        if (r[0] =='+'){
+                                        if (r[0] =='+'){//If the UID's match, continue
                                                 SERIAL_PROTOCOL("Updating\n");
                                                 delay(1000);
-                                                for(n = 0; n<=15; n++){
+                                                for(n = 0; n<=15; n++){//Receive the messages to write
                                                         memset(r, 0, sizeof r);
                                                         r[0] = MYSERIAL.read();
                                                         if(r[0] == '-'){
@@ -1655,13 +1659,13 @@ void process_commands()
                                                         }
                                         
                                                 tLine1 = 16;
-                                                WriteTagSector(tLine1);
+                                                WriteTagSector(tLine1);//Write the messages
                                                 myEnc.write(0);
                                                 SERIAL_PROTOCOL("Done writing\n");
                                                 done = true;
                                                 break;
                                                 }
-                                        else if(r[0] != '+'){
+                                        else if(r[0] != '+'){//If UID's do not match, break out
                                                 SERIAL_PROTOCOL(r[0]);
                                                 SERIAL_PROTOCOL("\n");
                                                 SERIAL_PROTOCOL("UID's do not match. Wrong side chosen?\n");
@@ -1686,18 +1690,25 @@ void process_commands()
                                   success = nfcR.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
                       
                                   if (success){
-                                          for(l=1; l<5;l++){
+                                          for(l=1; l<5;l++){//4 lines on tag
                                           delay(1000);
                                           for(n = 0; n<=15; n++)
                                                   {
-                                                  r[0] = MYSERIAL.read();
+                                                  r[0] = MYSERIAL.read();//receive the messages for each sector
                                                   if(r[0] == '>'){
                                                   break;}
                                                   msg[n] = r[0];
                                                   }
+                                          for(n = 0; n<=15; n++)
+                                                  {
+                                                  r[0] = MYSERIAL.read();//receive the messages for each sector
+                                                  if(r[0] == '>'){
+                                                  break;}
+                                                  msg2[n] = r[0];
+                                                  }
                                           n = 0;
                                           tLine1 = l*4;
-                                          WriteTagSector(tLine1);
+                                          WriteTagSector(tLine1);//write the messages to the specified sector
                                           if (l==4)
                                             {
                                             SERIAL_PROTOCOL("c\n");
@@ -1715,10 +1726,23 @@ void process_commands()
                             break;
                           }
                           break;		
-	        case 419: //Update pulsecount to controller
+	        case 419: //M419 Update pulsecount to controller
                 
-                          SERIAL_PROTOCOL(EncPulsesR);
+                          SERIAL_PROTOCOL(EncPulsesR);//Send the current encoder pulses to Pi to update savefile
                           myEnc.write(0);
+                          break;
+                case 420: //M420 Poll for RFID tags (automatic detection for loading/unloading)
+                
+                          success = nfcR.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+                          TagState = success;
+                          if (TagState != LastTagState){
+                            if(TagState == 1){
+                              SERIAL_PROTOCOL('F');
+                            }
+                            else{
+                              SERIAL_PROTOCOL('L');
+                            }
+                          }
                           break;
                            
 		case 500: // Store settings in EEPROM
