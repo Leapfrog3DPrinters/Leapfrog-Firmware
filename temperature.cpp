@@ -126,7 +126,7 @@ static unsigned long  previous_millis_bed_heater;
   static int maxttemp[EXTRUDERS] = { 15800 };   // the first value used for all
 #endif
   static int bed_minttemp = 0;
-  static int bed_maxttemp = 15800;
+  static int bed_maxttemp = 15810;
   static void *heater_ttbl_map[EXTRUDERS] = { (void *)heater_0_temptable
 #if EXTRUDERS > 1
                                             , (void *)heater_1_temptable

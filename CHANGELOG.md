@@ -2,6 +2,10 @@
 
 Changes to Leapfrog-Firmware
 
+## 3.0.0
+
+Set Y-shift fix in accordance with new LMC wiring
+
 ## 2.8
 
 - Added detection and support for high temperature hotend

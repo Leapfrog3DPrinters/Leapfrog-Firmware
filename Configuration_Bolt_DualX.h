@@ -60,11 +60,11 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 #define DISABLE_X1 false
 #define DISABLE_Y false
 #define DISABLE_Z false // prevented stripping
-#define DISABLE_E true // there are some new funtions in the new version of Merlin
+#define DISABLE_E false // there are some new funtions in the new version of Merlin
 
 #define INVERT_X0_DIR false    // for Creatr PRO set to true
-#define INVERT_X1_DIR false    // for Creatr PRO set to false
-#define INVERT_Y_DIR false    // for Creatr HS set to false
+#define INVERT_X1_DIR true    // for Creatr PRO set to false
+#define INVERT_Y_DIR true    // for Creatr HS set to false
 #define INVERT_Z_DIR false    // for Creatr Pro set to false
 #define INVERT_E0_DIR false   // fo BOLT! single to true
 #define INVERT_E1_DIR true    // for direct drive extruder v9 set to true, for geared extruder set to false

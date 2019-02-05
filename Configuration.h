@@ -11,7 +11,7 @@
   #define STRING_VERSION_CONFIG_H __DATE__ " " __TIME__ //Personal revision number for changes to THIS file.
   #define STRING_CONFIG_H_AUTHOR "Leapfrog 3D Printers" //Who made the changes.
 
-  #define LEAPFROG_LMC_VERSION "LMC v2"
+  #define LEAPFROG_LMC_VERSION "LMC v3"
   #define LEAPFROG_FIRMWARE_VERSION "3.1.0"
 
   #define LEAPFROG_MODEL "BoltPro2" //this is actually built on bolt firmware
@@ -67,7 +67,7 @@
   // You should use MINTEMP for thermistor short/failure protection.
   // TODO: variable MAXTEMP based on high and low temp hotends?
   #define HEATER_LOW_TEMP_MAX 275
-  #define HEATER_HIGH_TEMP_MAX 360
+  #define HEATER_HIGH_TEMP_MAX 400
   #define BED_MAXTEMP 100
 
   #define USE_BED_PWM
