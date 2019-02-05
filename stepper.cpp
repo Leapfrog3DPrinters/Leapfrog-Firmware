@@ -707,9 +707,9 @@ ISR(TIMER1_COMPA_vect)
           WRITE(Z3_STEP_PIN, HIGH);
         }
 
-         if(Z_STEPPER_SINGLE == 1){
+        if(Z_STEPPER_SINGLE == 1){
           WRITE(Z_STEP_PIN, HIGH);
-         }
+        }
 
         if(Z_STEPPER_SINGLE == 2){
           WRITE(Z2_STEP_PIN, HIGH);

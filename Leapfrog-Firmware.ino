@@ -731,7 +731,25 @@ static void homeaxis(int axis)
 #else
     swap_dir = 1;
 #endif
-
+    
+    //move extruder for z_homing
+    if(axis == Z_AXIS){
+      st_synchronize();
+      plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
+      destination[X_AXIS] = max_length(X_AXIS)/2;
+      feedrate = homing_feedrate[X_AXIS];
+      plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate / 60, active_extruder);
+      current_position[X_AXIS] = destination[X_AXIS];
+      st_synchronize();
+      
+      destination[Y_AXIS] = max_length(Y_AXIS)/2;
+      feedrate = homing_feedrate[Y_AXIS];
+      plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate / 60, active_extruder);
+      st_synchronize();
+      current_position[Y_AXIS] = destination[Y_AXIS];
+    }
+    
+    //home axis
     current_position[axis] = 0;
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
     destination[axis] = 1.5 * max_length(axis) * home_dir(axis) * swap_dir;
@@ -739,20 +757,33 @@ static void homeaxis(int axis)
     plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate / 60, active_extruder);
     st_synchronize();
 
-    if(axis == Z_AXIS) delay(500); //prevent unwanted piezo triggers
+    //if(axis == Z_AXIS) delay(500); //prevent unwanted piezo triggers
+    //retract axis
     current_position[axis] = 0;
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
     destination[axis] = -home_retract_mm(axis) * home_dir(axis) * swap_dir;
     plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate / 60, active_extruder);
     st_synchronize();
 
-    if(axis == Z_AXIS) delay(500); //prevent unwanted piezo triggers
+    //if(axis == Z_AXIS) delay(500); //prevent unwanted piezo triggers
+    //home again
     destination[axis] = 2 * home_retract_mm(axis) * home_dir(axis) * swap_dir;
     feedrate = homing_feedrate[axis] / 2;
     plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate / 60, active_extruder);
     st_synchronize();
 
     axis_is_at_home(axis);
+    
+    //return extruders to homed position
+    if(axis == Z_AXIS){
+      destination[axis] = -home_retract_mm(axis) * home_dir(axis) * swap_dir;
+      plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate / 60, active_extruder);
+      st_synchronize();
+      current_position[axis] = destination[axis];
+      plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
+      homeaxis(X_AXIS);
+      homeaxis(Y_AXIS);
+    }
     destination[axis] = current_position[axis];
     feedrate = 0.0;
     endstops_hit_on_purpose();
@@ -963,7 +994,7 @@ void process_commands()
           //probe with right nozzle
           tmp_extruder = active_extruder;
           active_extruder = 0;
-          while(zprobe_piezo_3point(true) > 0.5);
+          while(zprobe_piezo(true) > 0.5);
           computeNozzleOffset();
           //set stuff back
           active_extruder = tmp_extruder;
@@ -1969,7 +2000,6 @@ float zprobe(const float& x, const float& y, const float& z){
   return rz;
 }
 
-//Check ZAdjust functions
 void ZAdjust1(float distance)
 {
   Z_STEPPER_SINGLE=4;//disable any move
